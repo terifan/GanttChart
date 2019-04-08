@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 import static org.terifan.ganttchart.GanttChartPanel.C;
 
-
+ 
 /**
  * This GanttChart implementation is used to measure performance of processes. Create an instance of the chart, visualise it in a
  * window and then for each point of interest add an enter before and exit after to measure and display the time. Processes can be nested
