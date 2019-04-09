@@ -5,6 +5,9 @@ Create an instance of the chart, visualise it in a window and then for each poin
 before and exit after to measure and display the time. Processes can be nested and divided into subroutines
 by calling the tick method.
 
+### Prerequisites
+Java 8, Netbeans project but not required
+
 ### Example
 ```
 GanttChart chart = new GanttChart();
@@ -22,7 +25,7 @@ void myFunction()
 
 void mySecondFunction()
 {
-  try (GanttChart unused = chart.enter("mySecondFunction"))
+  try (GanttChart unused = chart.enter("mySecondFunction")) // Java 9: try (chart.enter("mySecondFunction"))
   {
     Thread.sleep(100); // perform work...
     chart.tick("doing something");
