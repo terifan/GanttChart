@@ -73,10 +73,10 @@ public class GanttChartPanel extends JPanel
 						setSelectedElementIndex(Math.max(getSelectedElementIndex() - 1, 0));
 						break;
 					case KeyEvent.VK_DOWN:
-						setSelectedElementIndex(Math.min(getSelectedElementIndex() + 1, mChart.mMap.size() - 1));
+						setSelectedElementIndex(Math.min(getSelectedElementIndex() + 1, mChart.size() - 1));
 						break;
 					case KeyEvent.VK_END:
-						setSelectedElementIndex(Math.max(mChart.mMap.size() - 1, 0));
+						setSelectedElementIndex(Math.max(mChart.size() - 1, 0));
 						break;
 					case KeyEvent.VK_HOME:
 						setSelectedElementIndex(0);
@@ -95,12 +95,9 @@ public class GanttChartPanel extends JPanel
 
 	public int getSelectedElementIndex()
 	{
-		TreeMap<Long, GanttChartElement> map = mChart.mMap;
-
-		int i = 0;
-		for (GanttChartElement element : map.values())
+		for (int i = 0, sz = mChart.size(); i < sz; i++)
 		{
-			if (element == mSelectedElement)
+			if (mChart.get(i) == mSelectedElement)
 			{
 				return i;
 			}
@@ -113,14 +110,12 @@ public class GanttChartPanel extends JPanel
 
 	public void setSelectedElementIndex(int aIndex)
 	{
-		TreeMap<Long, GanttChartElement> map = mChart.mMap;
-
-		if (aIndex < 0 || aIndex >= map.size())
+		if (aIndex < 0 || aIndex >= mChart.size())
 		{
 			return;
 		}
 
-		mSelectedElement = map.get(map.keySet().toArray(new Long[map.size()])[aIndex]);
+		mSelectedElement = mChart.get(aIndex);
 
 		if (mDetailPanel != null)
 		{
@@ -140,8 +135,6 @@ public class GanttChartPanel extends JPanel
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		TreeMap<Long, GanttChartElement> map = mChart.mMap;
-
 		int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
 		int h = getHeight();
 
@@ -154,7 +147,7 @@ public class GanttChartPanel extends JPanel
 			g.fillRect(0, y, w, mRowHeight);
 		}
 
-		if (map.isEmpty())
+		if (mChart.size() == 0)
 		{
 			return;
 		}
@@ -165,9 +158,9 @@ public class GanttChartPanel extends JPanel
 		int wi = w - mLabelWidth - mRightMargin;
 		int y = 0;
 
-		for (GanttChartElement element : map.values())
+		for (int i = 0, sz = mChart.size(); i < sz; i++)
 		{
-			drawElement(g, element, y, w, start, end, wi);
+			drawElement(g, mChart.get(i), y, w, start, end, wi);
 
 			y += mRowHeight;
 		}
@@ -245,7 +238,7 @@ public class GanttChartPanel extends JPanel
 	@Override
 	public Dimension preferredSize()
 	{
-		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * mChart.mMap.size());
+		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * mChart.size());
 	}
 
 

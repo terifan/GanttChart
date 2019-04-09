@@ -2,6 +2,7 @@ package org.terifan.ganttchart;
 
 import java.awt.Color;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 
@@ -36,7 +37,9 @@ public class GanttChart implements AutoCloseable
 
 	private final ArrayDeque<Long> mStack;
 
-	final TreeMap<Long, GanttChartElement> mMap;
+	private ArrayList<Long> mKeys;
+	private TreeMap<Long, GanttChartElement> mMap;
+
 	GanttChartPanel mPanel;
 
 	private long mStartTime;
@@ -47,6 +50,7 @@ public class GanttChart implements AutoCloseable
 	public GanttChart()
 	{
 		mMap = new TreeMap<>();
+		mKeys = new ArrayList<>();
 		mStack = new ArrayDeque<>();
 	}
 
@@ -90,6 +94,7 @@ public class GanttChart implements AutoCloseable
 			mEndTime = time;
 		}
 
+		mKeys.add(time);
 		mStack.add(time);
 
 		mMap.put(time, new GanttChartElement(time, aDescription, C[ci++ % C.length]));
@@ -142,5 +147,17 @@ public class GanttChart implements AutoCloseable
 	synchronized long getEndTime()
 	{
 		return mStack.isEmpty() ? mEndTime : System.nanoTime();
+	}
+
+
+	public int size()
+	{
+		return mMap.size();
+	}
+
+
+	GanttChartElement get(int aIndex)
+	{
+		return mMap.get(mKeys.get(aIndex));
 	}
 }

@@ -29,13 +29,14 @@ public class Demo
 				}
 			}, 100, 100);
 
-			try (GanttChart unused1 = chart.enter("my function"))
+			try (GanttChart func1 = chart.enter("my function"))
 			{
 				Thread.sleep(10);
 
-				chart.enter("start tiny work");
-				chart.tick("tick");
-				chart.exit();
+				try (GanttChart func2 = func1.enter("start tiny work"))
+				{
+					func2.tick("tick");
+				}
 
 				Thread.sleep(100);
 
@@ -46,24 +47,24 @@ public class Demo
 				{
 					elements.add(() ->
 					{
-						try (GanttChart unused2 = chart.enter("doing something"))
+						try (GanttChart func2 = func1.enter("doing something"))
 						{
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttChart unused3 = chart.enter("lets do it"))
+							try (GanttChart func3 = func2.enter("lets do it"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
-								chart.tick("next step");
+								func3.tick("next step");
 								Thread.sleep(rnd.nextInt(1000));
-								chart.tick("last step");
+								func3.tick("last step");
 								Thread.sleep(rnd.nextInt(1000));
 							}
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttChart unused3 = chart.enter("even more work"))
+							try (GanttChart func3 = func2.enter("even more work"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
 							}
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttChart unused3 = chart.enter("some more"))
+							try (GanttChart func3 = func2.enter("some more"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
 							}
@@ -75,17 +76,17 @@ public class Demo
 					});
 				}
 
-				elements.parallelStream().forEach(e->e.run());
+				elements.parallelStream().forEach(Runnable::run);
 
-				try (GanttChart unused2 = chart.enter("almost finished"))
+				try (GanttChart func2 = func1.enter("almost finished"))
 				{
 					Thread.sleep(100);
-					try (GanttChart unused3 = chart.enter("almost there"))
+					try (GanttChart func3 = func2.enter("almost there"))
 					{
 						Thread.sleep(100);
-						chart.tick("only some more");
+						func3.tick("only some more");
 						Thread.sleep(100);
-						chart.tick("yeeees");
+						func3.tick("yeeees");
 						Thread.sleep(100);
 					}
 					Thread.sleep(50);
