@@ -1,12 +1,14 @@
 # GanttChart
-This is a simple Gantt chart implementation used to measure performance of processes
-
-Create an instance of the chart, visualise it in a window and then for each point of interest add an enter
-before and exit after to measure and display the time. Processes can be nested and divided into subroutines
-by calling the tick method.
+This is a simple Gantt chart implementation used to measure performance of processes modelled after the network performance graph found in the Mozilla FireFox web browser.
 
 ### Prerequisites
 Java 8, Netbeans project but not required
+
+### Overview
+
+Create an instance of the chart, visualise it in a window and then for each point of interest add an enter
+before and exit after to measure and display the time. Processes can be nested and divided into subparts
+by calling the tick method.
 
 ### Example
 ```
