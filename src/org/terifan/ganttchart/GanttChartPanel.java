@@ -11,6 +11,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JPanel;
 
 
@@ -48,14 +49,15 @@ public class GanttChartPanel extends JPanel
 			@Override
 			public void mouseDragged(MouseEvent aEvent)
 			{
-				setSelectedElementIndex(aEvent.getY() / mRowHeight);
+				setSelectedRowIndex(aEvent.getY() / mRowHeight);
 			}
+
 
 			@Override
 			public void mousePressed(MouseEvent aEvent)
 			{
 				requestFocus();
-				setSelectedElementIndex(aEvent.getY() / mRowHeight);
+				setSelectedRowIndex(aEvent.getY() / mRowHeight);
 			}
 		};
 
@@ -70,16 +72,16 @@ public class GanttChartPanel extends JPanel
 				switch (aEvent.getKeyCode())
 				{
 					case KeyEvent.VK_UP:
-						setSelectedElementIndex(Math.max(getSelectedElementIndex() - 1, 0));
+						setSelectedRowIndex(Math.max(getSelectedRowIndex() - 1, 0));
 						break;
 					case KeyEvent.VK_DOWN:
-						setSelectedElementIndex(Math.min(getSelectedElementIndex() + 1, mChart.size() - 1));
+						setSelectedRowIndex(Math.min(getSelectedRowIndex() + 1, getElementCount() - 1));
 						break;
 					case KeyEvent.VK_END:
-						setSelectedElementIndex(Math.max(mChart.size() - 1, 0));
+						setSelectedRowIndex(Math.max(getElementCount() - 1, 0));
 						break;
 					case KeyEvent.VK_HOME:
-						setSelectedElementIndex(0);
+						setSelectedRowIndex(0);
 						break;
 				}
 			}
@@ -93,28 +95,60 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	public int getSelectedElementIndex()
+	public int getSelectedRowIndex()
 	{
-		for (int i = 0, sz = mChart.size(); i < sz; i++)
-		{
-			if (mChart.get(i) == mSelectedElement)
-			{
-				return i;
-			}
-			i++;
-		}
+		Object o = forEach((r, e) -> e == mSelectedElement ? r : null);
 
-		return -1;
+		return o == null ? -1 : (Integer)o;
 	}
 
 
-	public void setSelectedElementIndex(int aIndex)
+	public void setSelectedRowIndex(int aRowIndex)
 	{
-		if (aIndex < 0)
+		if (aRowIndex < 0)
 		{
 			return;
 		}
 
+		GanttElement o = getElement(aRowIndex);
+
+		if (o != null)
+		{
+			mSelectedElement = o;
+
+			if (mDetailPanel != null)
+			{
+				mDetailPanel.setSelectedElement(mSelectedElement);
+				mDetailPanel.repaint();
+			}
+
+			repaint();
+		}
+	}
+
+
+	public GanttElement getElement(int aRowIndex)
+	{
+		return (GanttElement)forEach((r, e) -> r == aRowIndex ? e : null);
+	}
+
+
+	public int getElementCount()
+	{
+		AtomicInteger counter = new AtomicInteger();
+
+		forEach((r, e) ->
+		{
+			counter.set(r + 1);
+			return null;
+		});
+
+		return counter.get();
+	}
+
+
+	public Object forEach(Visitor aVisitor)
+	{
 		ArrayDeque<GanttElement> stack = new ArrayDeque<>();
 		stack.add(mChart);
 
@@ -124,11 +158,14 @@ public class GanttChartPanel extends JPanel
 		{
 			GanttElement element = stack.removeFirst();
 
-			if (row++ == aIndex)
+			Object o = aVisitor.visit(row, element);
+
+			if (o != null)
 			{
-				mSelectedElement = element;
-				break;
+				return o;
 			}
+
+			row++;
 
 			for (int j = element.mElements.size(); --j >= 0;)
 			{
@@ -136,13 +173,13 @@ public class GanttChartPanel extends JPanel
 			}
 		}
 
-		if (mDetailPanel != null)
-		{
-			mDetailPanel.setSelectedElement(mSelectedElement);
-			mDetailPanel.repaint();
-		}
+		return null;
+	}
 
-		repaint();
+
+	public interface Visitor
+	{
+		Object visit(int aRow, GanttElement aElement);
 	}
 
 
@@ -231,11 +268,11 @@ public class GanttChartPanel extends JPanel
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mTimeFont);
-		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, aY + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, aY + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mLabelFont);
-		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2, aY + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2, aY + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
 
 		return aY + mRowHeight;
 	}
