@@ -1,5 +1,7 @@
 package org.terifan.ganttchart.samples;
 
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.terifan.ganttchart.GanttChart;
@@ -37,79 +39,43 @@ public class Demo
 
 				Thread.sleep(100);
 
-				try (GanttChart unused2 = chart.enter("doing something"))
+				Random rnd = new Random();
+
+				ArrayList<Runnable> elements = new ArrayList<>();
+				for (int i = 0; i < 5; i++)
 				{
-					Thread.sleep(100);
-					try (GanttChart unused3 = chart.enter("lets do it"))
+					elements.add(() ->
 					{
-						Thread.sleep(1500);
-						chart.tick("next step");
-						Thread.sleep(500);
-						chart.tick("last step");
-						Thread.sleep(1000);
-					}
-					Thread.sleep(50);
-					try (GanttChart unused3 = chart.enter("even more work"))
-					{
-						Thread.sleep(100);
-					}
-					Thread.sleep(50);
-					try (GanttChart unused3 = chart.enter("some more"))
-					{
-						Thread.sleep(100);
-					}
-					Thread.sleep(50);
+						try (GanttChart unused2 = chart.enter("doing something"))
+						{
+							Thread.sleep(rnd.nextInt(1000));
+							try (GanttChart unused3 = chart.enter("lets do it"))
+							{
+								Thread.sleep(rnd.nextInt(1000));
+								chart.tick("next step");
+								Thread.sleep(rnd.nextInt(1000));
+								chart.tick("last step");
+								Thread.sleep(rnd.nextInt(1000));
+							}
+							Thread.sleep(rnd.nextInt(1000));
+							try (GanttChart unused3 = chart.enter("even more work"))
+							{
+								Thread.sleep(rnd.nextInt(1000));
+							}
+							Thread.sleep(rnd.nextInt(1000));
+							try (GanttChart unused3 = chart.enter("some more"))
+							{
+								Thread.sleep(rnd.nextInt(1000));
+							}
+							Thread.sleep(rnd.nextInt(1000));
+						}
+						catch (Exception e)
+						{
+						}
+					});
 				}
 
-				try (GanttChart unused2 = chart.enter("doing something"))
-				{
-					Thread.sleep(100);
-					try (GanttChart unused3 = chart.enter("lets do it"))
-					{
-						Thread.sleep(1500);
-						chart.tick("next step");
-						Thread.sleep(500);
-						chart.tick("last step");
-						Thread.sleep(1000);
-					}
-					Thread.sleep(50);
-					try (GanttChart unused3 = chart.enter("even more work"))
-					{
-						Thread.sleep(100);
-					}
-					Thread.sleep(50);
-					try (GanttChart unused3 = chart.enter("some more"))
-					{
-						Thread.sleep(100);
-					}
-					Thread.sleep(50);
-				}
-
-				try (GanttChart unused2 = chart.enter("doing something"))
-				{
-					Thread.sleep(100);
-					try (GanttChart unused3 = chart.enter("lets do it"))
-					{
-						Thread.sleep(1500);
-						chart.tick("next step");
-						Thread.sleep(500);
-						chart.tick("last step");
-						Thread.sleep(1000);
-					}
-					Thread.sleep(50);
-					try (GanttChart unused3 = chart.enter("even more work"))
-					{
-						Thread.sleep(100);
-					}
-					Thread.sleep(50);
-					try (GanttChart unused3 = chart.enter("some more"))
-					{
-						Thread.sleep(100);
-					}
-					Thread.sleep(50);
-				}
-
-				Thread.sleep(50);
+				elements.parallelStream().forEach(e->e.run());
 
 				try (GanttChart unused2 = chart.enter("almost finished"))
 				{
