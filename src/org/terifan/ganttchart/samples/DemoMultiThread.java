@@ -5,10 +5,11 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import org.terifan.ganttchart.GanttChart;
+import org.terifan.ganttchart.GanttElement;
 import org.terifan.ganttchart.SimpleGanttWindow;
 
 
-public class Demo
+public class DemoMultiThread
 {
 	public static void main(String... args)
 	{
@@ -29,11 +30,11 @@ public class Demo
 				}
 			}, 100, 100);
 
-			try (GanttChart func1 = chart.enter("my function"))
+			try (GanttElement func1 = chart.enter("my function"))
 			{
 				Thread.sleep(10);
 
-				try (GanttChart func2 = func1.enter("start tiny work"))
+				try (GanttElement func2 = func1.enter("start tiny work"))
 				{
 					func2.tick("tick");
 				}
@@ -47,10 +48,10 @@ public class Demo
 				{
 					elements.add(() ->
 					{
-						try (GanttChart func2 = func1.enter("doing something"))
+						try (GanttElement func2 = func1.enter("doing something"))
 						{
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttChart func3 = func2.enter("lets do it"))
+							try (GanttElement func3 = func2.enter("lets do it"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
 								func3.tick("next step");
@@ -59,12 +60,12 @@ public class Demo
 								Thread.sleep(rnd.nextInt(1000));
 							}
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttChart func3 = func2.enter("even more work"))
+							try (GanttElement func3 = func2.enter("even more work"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
 							}
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttChart func3 = func2.enter("some more"))
+							try (GanttElement func3 = func2.enter("some more"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
 							}
@@ -78,10 +79,10 @@ public class Demo
 
 				elements.parallelStream().forEach(Runnable::run);
 
-				try (GanttChart func2 = func1.enter("almost finished"))
+				try (GanttElement func2 = func1.enter("almost finished"))
 				{
 					Thread.sleep(100);
-					try (GanttChart func3 = func2.enter("almost there"))
+					try (GanttElement func3 = func2.enter("almost there"))
 					{
 						Thread.sleep(100);
 						func3.tick("only some more");

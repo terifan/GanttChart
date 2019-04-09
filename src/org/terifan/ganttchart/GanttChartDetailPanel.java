@@ -14,7 +14,7 @@ public class GanttChartDetailPanel extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 
-	private GanttChartElement mSelectedElement;
+	private GanttElement mSelectedElement;
 	private int mLabelWidth = 100;
 	private int mRowHeight = 24;
 	private int mBarHeight = 9;
@@ -23,7 +23,7 @@ public class GanttChartDetailPanel extends JPanel
 	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
 
 
-	public void setSelectedElement(GanttChartElement aSelectedElement)
+	public void setSelectedElement(GanttElement aSelectedElement)
 	{
 		mSelectedElement = aSelectedElement;
 	}
@@ -54,18 +54,18 @@ public class GanttChartDetailPanel extends JPanel
 		int wi = w - mLabelWidth - mRightMargin;
 		int y = 0;
 
-		for (int i = 0, sz = mSelectedElement.getSubCount(); i < sz; i++)
+		for (int i = 0, sz = mSelectedElement.getSegmentCount(); i < sz; i++)
 		{
-			GanttChartElement subElement = mSelectedElement.getSubElement(i);
+			GanttSegment segment = mSelectedElement.getSegment(i);
 
-			long t0 = mSelectedElement.getSubTime(i + 0);
-			long t1 = mSelectedElement.getSubTime(i + 1);
+			long t0 = segment.getStartTime();
+			long t1 = segment.getEndTime();
 
 			int x0 = (int)((t0 - startTime) * wi / (endTime - startTime));
 			int x1 = (int)((t1 - startTime) * wi / (endTime - startTime));
 
-			g.setColor(subElement.getColor());
-			g.fillRect(mLabelWidth + x0, y + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight);
+			g.setColor(segment.getColor());
+			g.fillRect(mLabelWidth + x0, y + (mRowHeight - mBarHeight) / 2, Math.max(1, x1 - x0), mBarHeight);
 
 			g.setColor(Color.BLACK);
 			g.setFont(mTimeFont);
@@ -73,7 +73,7 @@ public class GanttChartDetailPanel extends JPanel
 
 			g.setColor(Color.BLACK);
 			g.setFont(mLabelFont);
-			g.drawString(subElement.getDescription(), 2, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
+			g.drawString(segment.getDescription(), 2, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
 
 			y += mRowHeight;
 		}
@@ -83,6 +83,6 @@ public class GanttChartDetailPanel extends JPanel
 	@Override
 	public Dimension preferredSize()
 	{
-		return new Dimension(mLabelWidth + 50 + mRightMargin, mSelectedElement == null ? 1 : mRowHeight * mSelectedElement.getSubCount());
+		return new Dimension(mLabelWidth + 50 + mRightMargin, mSelectedElement == null ? 1 : mRowHeight * mSelectedElement.getSegmentCount());
 	}
 }
