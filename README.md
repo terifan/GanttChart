@@ -10,6 +10,10 @@ Create an instance of the chart, visualise it in a window and then for each poin
 before and exit after to measure and display the time. Processes can be nested and divided into subparts
 by calling the tick method.
 
+### Sample output
+
+<img src="https://github.com/terifan/GanttChart/blob/master/src/org/terifan/ganttchart/samples/sample_output.png"></img>
+
 ### Example
 ```
 GanttChart chart = new GanttChart();
