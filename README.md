@@ -5,17 +5,28 @@ Create an instance of the chart, visualise it in a window and then for each poin
 before and exit after to measure and display the time. Processes can be nested and divided into subroutines
 by calling the tick method.
 
-
+### Example
+```
 GanttChart chart = new GanttChart();
-
 new SimpleGanttWindow(chart).show();
 
-chart.enter("step 1");
+void myFunction()
+{
+  chart.enter("myFunction");
+  Thread.sleep(100); // perform work...
+  chart.tick("doing something");
+  Thread.sleep(100); // perform work...
+  mySecondFunction();
+  chart.exit();
+}
 
-// perform work...
-
-chart.tick("step 2");
-
-// perform work...
- 
-chart.exit();
+void mySecondFunction()
+{
+  try (GanttChart unused = chart.enter("mySecondFunction"))
+  {
+    Thread.sleep(100); // perform work...
+    chart.tick("doing something");
+    Thread.sleep(100); // perform work...
+  }
+}
+```
