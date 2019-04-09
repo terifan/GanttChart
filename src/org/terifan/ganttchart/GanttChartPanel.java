@@ -10,8 +10,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 import javax.swing.JPanel;
 
@@ -20,11 +18,6 @@ public class GanttChartPanel extends JPanel
 {
 	private final static long serialVersionUID = 1L;
 	private final GanttChart mChart;
-
-	final static int[] C =
-	{
-		0xEF7586, 0xE599FF, 0xE08453, 0x7F9FBF, 0x56C83F
-	};
 
 	private final static Color ROW_LIGHT = new Color(255, 255, 255);
 	private final static Color ROW_DARK = new Color(242, 242, 242);
@@ -36,15 +29,15 @@ public class GanttChartPanel extends JPanel
 	private int mRightMargin = 50;
 	private Font mLabelFont = new Font("segoe ui", Font.PLAIN, 12);
 	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
+
+	private GanttChartDetailPanel mDetailPanel;
+	private GanttChartElement mSelectedElement;
 	private boolean mRequestFocusOnDisplay;
 
-	private final GanttChartDetailPanel mDetailPanel;
-	private GanttChartElement mSelectedElement;
 
-
-	public GanttChartPanel(GanttChart aGanttChart, GanttChartDetailPanel aDetailPanel)
+	public GanttChartPanel(GanttChart aChart, GanttChartDetailPanel aDetailPanel)
 	{
-		mChart = aGanttChart;
+		mChart = aChart;
 
 		mDetailPanel = aDetailPanel;
 		mChart.mPanel = this;
@@ -131,7 +124,7 @@ public class GanttChartPanel extends JPanel
 
 		if (mDetailPanel != null)
 		{
-			mDetailPanel.setElement(mSelectedElement);
+			mDetailPanel.setSelectedElement(mSelectedElement);
 			mDetailPanel.repaint();
 		}
 
@@ -189,7 +182,7 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	private void drawGrid(Graphics aGraphics, int aContentWidth, int aHeight)
+	private void drawGrid(Graphics2D aGraphics, int aContentWidth, int aHeight)
 	{
 		for (int col = 0; col <= 10; col++)
 		{
@@ -207,7 +200,7 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	private void drawElement(Graphics aGraphics, GanttChartElement aElement, int aY, int aWidth, long aStartTime, long aEndTime, int aContentWidth)
+	private void drawElement(Graphics2D aGraphics, GanttChartElement aElement, int aY, int aWidth, long aStartTime, long aEndTime, int aContentWidth)
 	{
 		if (mSelectedElement == aElement)
 		{
@@ -218,14 +211,14 @@ public class GanttChartPanel extends JPanel
 		long startTime = aElement.getStartTime();
 		long endTime = aElement.getEndTime();
 
-		aGraphics.setColor(new Color(aElement.getColor()));
+		aGraphics.setColor(aElement.getColor());
 
 		for (int i = 0, sz = aElement.getSubCount(); i < sz; i++)
 		{
 			int x0 = mLabelWidth + (int)((aElement.getSubTime(i + 0) - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 			int x1 = mLabelWidth + (int)((aElement.getSubTime(i + 1) - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 
-			aGraphics.setColor(new Color(aElement.getSubElement(i).getColor()));
+			aGraphics.setColor(aElement.getSubElement(i).getColor());
 
 			if (aElement.isRunning() && i == sz - 1)
 			{
@@ -241,11 +234,11 @@ public class GanttChartPanel extends JPanel
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mTimeFont);
-		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, aY + 15);
+		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, aY + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mLabelFont);
-		aGraphics.drawString(aElement.getDescription(), 0, aY + 15);
+		aGraphics.drawString(aElement.getDescription(), 2, aY + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
 	}
 
 

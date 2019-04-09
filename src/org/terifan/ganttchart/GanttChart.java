@@ -1,26 +1,40 @@
 package org.terifan.ganttchart;
 
-import java.util.ArrayList;
+import java.awt.Color;
+import java.util.ArrayDeque;
 import java.util.TreeMap;
-import static org.terifan.ganttchart.GanttChartPanel.C;
 
- 
+
 /**
- * This GanttChart implementation is used to measure performance of processes. Create an instance of the chart, visualise it in a
- * window and then for each point of interest add an enter before and exit after to measure and display the time. Processes can be nested
- * and divided into subroutines by calling the tick method.
- *
- * GanttChart chart = new GanttChart();
- * new SimpleGanttWindow(chart).show();
- * chart.enter("step 1");
- * // perform work...
- * chart.tick("step 2");
- * // perform work...
- * chart.exit();
+ * This GanttChart implementation is used to measure performance of processes.
  */
 public class GanttChart implements AutoCloseable
 {
-	private final ArrayList<Long> mStack;
+	private final static Color[] C =
+	{
+		new Color(0, 150, 220),
+		new Color(230, 25, 75),
+		new Color(60, 180, 75),
+		new Color(255, 225, 25),
+		new Color(245, 130, 48),
+		new Color(145, 30, 180),
+		new Color(70, 240, 240),
+		new Color(240, 50, 230),
+		new Color(210, 245, 60),
+		new Color(250, 190, 190),
+		new Color(0, 128, 128),
+		new Color(230, 190, 255),
+		new Color(170, 110, 40),
+		new Color(255, 250, 200),
+		new Color(128, 0, 0),
+		new Color(170, 255, 195),
+		new Color(128, 128, 0),
+		new Color(255, 215, 180),
+		new Color(0, 0, 128),
+		new Color(128, 128, 128)
+	};
+
+	private final ArrayDeque<Long> mStack;
 
 	final TreeMap<Long, GanttChartElement> mMap;
 	GanttChartPanel mPanel;
@@ -33,7 +47,7 @@ public class GanttChart implements AutoCloseable
 	public GanttChart()
 	{
 		mMap = new TreeMap<>();
-		mStack = new ArrayList<>();
+		mStack = new ArrayDeque<>();
 	}
 
 
@@ -43,11 +57,11 @@ public class GanttChart implements AutoCloseable
 	 * @param aDescription
 	 *   a name or description of the work item
 	 */
-	public void tick(String aDescription)
+	public synchronized void tick(String aDescription)
 	{
 		long time = System.nanoTime();
 
-		mMap.get(mStack.get(mStack.size() - 1)).getSubElements().add(new GanttChartElement(time, aDescription, C[ci++ % C.length]));
+		mMap.get(mStack.getLast()).add(new GanttChartElement(time, aDescription, C[ci++ % C.length]));
 
 		mEndTime = time;
 
@@ -66,7 +80,7 @@ public class GanttChart implements AutoCloseable
 	 * @return
 	 *   this
 	 */
-	public GanttChart enter(String aDescription)
+	public synchronized GanttChart enter(String aDescription)
 	{
 		long time = System.nanoTime();
 
@@ -93,9 +107,9 @@ public class GanttChart implements AutoCloseable
 	/**
 	 * Exits the current work item.
 	 */
-	public void exit()
+	public synchronized void exit()
 	{
-		long key = mStack.remove(mStack.size() - 1);
+		long key = mStack.removeLast();
 		long time = System.nanoTime();
 
 		mMap.get(key).setEndTime(time);
@@ -125,7 +139,7 @@ public class GanttChart implements AutoCloseable
 	}
 
 
-	long getEndTime()
+	synchronized long getEndTime()
 	{
 		return mStack.isEmpty() ? mEndTime : System.nanoTime();
 	}

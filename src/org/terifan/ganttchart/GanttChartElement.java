@@ -1,5 +1,6 @@
 package org.terifan.ganttchart;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 
@@ -9,25 +10,15 @@ public class GanttChartElement
 	private long mStartTime;
 	private long mEndTime;
 	private String mDescription;
-	private int mColor;
+	private Color mColor;
 
 
-	GanttChartElement(long aStartTime, String aDescription, int aColor)
+	GanttChartElement(long aStartTime, String aDescription, Color aColor)
 	{
 		mStartTime = aStartTime;
 		mEndTime = aStartTime;
 		mDescription = aDescription;
 		mColor = aColor;
-	}
-
-
-	ArrayList<GanttChartElement> getSubElements()
-	{
-		if (mSubElements == null)
-		{
-			mSubElements = new ArrayList<>();
-		}
-		return mSubElements;
 	}
 
 
@@ -55,7 +46,7 @@ public class GanttChartElement
 	}
 
 
-	public int getColor()
+	public Color getColor()
 	{
 		return mColor;
 	}
@@ -91,5 +82,15 @@ public class GanttChartElement
 	public int getSubCount()
 	{
 		return mSubElements == null ? 1 : 1 + mSubElements.size();
+	}
+
+
+	void add(GanttChartElement aElement)
+	{
+		if (mSubElements == null)
+		{
+			mSubElements = new ArrayList<>();
+		}
+		mSubElements.add(aElement);
 	}
 }

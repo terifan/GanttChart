@@ -60,7 +60,57 @@ public class Demo
 					}
 					Thread.sleep(50);
 				}
+
+				try (GanttChart unused2 = chart.enter("doing something"))
+				{
+					Thread.sleep(100);
+					try (GanttChart unused3 = chart.enter("lets do it"))
+					{
+						Thread.sleep(1500);
+						chart.tick("next step");
+						Thread.sleep(500);
+						chart.tick("last step");
+						Thread.sleep(1000);
+					}
+					Thread.sleep(50);
+					try (GanttChart unused3 = chart.enter("even more work"))
+					{
+						Thread.sleep(100);
+					}
+					Thread.sleep(50);
+					try (GanttChart unused3 = chart.enter("some more"))
+					{
+						Thread.sleep(100);
+					}
+					Thread.sleep(50);
+				}
+
+				try (GanttChart unused2 = chart.enter("doing something"))
+				{
+					Thread.sleep(100);
+					try (GanttChart unused3 = chart.enter("lets do it"))
+					{
+						Thread.sleep(1500);
+						chart.tick("next step");
+						Thread.sleep(500);
+						chart.tick("last step");
+						Thread.sleep(1000);
+					}
+					Thread.sleep(50);
+					try (GanttChart unused3 = chart.enter("even more work"))
+					{
+						Thread.sleep(100);
+					}
+					Thread.sleep(50);
+					try (GanttChart unused3 = chart.enter("some more"))
+					{
+						Thread.sleep(100);
+					}
+					Thread.sleep(50);
+				}
+
 				Thread.sleep(50);
+
 				try (GanttChart unused2 = chart.enter("almost finished"))
 				{
 					Thread.sleep(100);

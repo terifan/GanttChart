@@ -6,7 +6,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.util.ArrayList;
 import javax.swing.JPanel;
 import static org.terifan.ganttchart.GanttChartPanel.formatTime;
 
@@ -15,7 +14,7 @@ public class GanttChartDetailPanel extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 
-	private GanttChartElement mElement;
+	private GanttChartElement mSelectedElement;
 	private int mLabelWidth = 100;
 	private int mRowHeight = 24;
 	private int mBarHeight = 9;
@@ -24,14 +23,9 @@ public class GanttChartDetailPanel extends JPanel
 	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
 
 
-	public GanttChartDetailPanel()
+	public void setSelectedElement(GanttChartElement aSelectedElement)
 	{
-	}
-
-
-	public void setElement(GanttChartElement aElement)
-	{
-		mElement = aElement;
+		mSelectedElement = aSelectedElement;
 	}
 
 
@@ -49,50 +43,38 @@ public class GanttChartDetailPanel extends JPanel
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 0, w, h);
 
-		if (mElement == null)
+		if (mSelectedElement == null)
 		{
 			return;
 		}
 
-		ArrayList<GanttChartElement> subElements = mElement.getSubElements();
-
-		long startTime = mElement.getStartTime();
-		long endTime = mElement.getEndTime();
+		long startTime = mSelectedElement.getStartTime();
+		long endTime = mSelectedElement.getEndTime();
 
 		int wi = w - mLabelWidth - mRightMargin;
-		int x0 = 0;
 		int y = 0;
-		long lastTime = startTime;
 
-		for (int i = 0; i <= subElements.size(); i++)
+		for (int i = 0, sz = mSelectedElement.getSubCount(); i < sz; i++)
 		{
-			int x1;
-			long tickTime;
+			GanttChartElement subElement = mSelectedElement.getSubElement(i);
 
-			if (i == subElements.size())
-			{
-				tickTime = endTime;
-				x1 = wi;
-			}
-			else
-			{
-				tickTime = subElements.get(i).getStartTime();
-				x1 = (int)((tickTime - startTime) * wi / (endTime - startTime));
-			}
+			long t0 = mSelectedElement.getSubTime(i + 0);
+			long t1 = mSelectedElement.getSubTime(i + 1);
 
-			g.setColor(new Color(i == 0 ? mElement.getColor() : subElements.get(i - 1).getColor()));
+			int x0 = (int)((t0 - startTime) * wi / (endTime - startTime));
+			int x1 = (int)((t1 - startTime) * wi / (endTime - startTime));
+
+			g.setColor(subElement.getColor());
 			g.fillRect(mLabelWidth + x0, y + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight);
 
 			g.setColor(Color.BLACK);
 			g.setFont(mTimeFont);
-			g.drawString(formatTime(tickTime - lastTime), mLabelWidth + x1 + 5, y + 15);
+			g.drawString(formatTime(t1 - t0), mLabelWidth + x1 + 5, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
 
 			g.setColor(Color.BLACK);
 			g.setFont(mLabelFont);
-			g.drawString(i == 0 ? mElement.getDescription() : subElements.get(i - 1).getDescription(), 0, y + 15);
+			g.drawString(subElement.getDescription(), 2, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
 
-			x0 = x1;
-			lastTime = tickTime;
 			y += mRowHeight;
 		}
 	}
@@ -101,6 +83,6 @@ public class GanttChartDetailPanel extends JPanel
 	@Override
 	public Dimension preferredSize()
 	{
-		return new Dimension(mLabelWidth + 50 + mRightMargin, mElement == null ? 1 : mRowHeight * mElement.getSubElements().size());
+		return new Dimension(mLabelWidth + 50 + mRightMargin, mSelectedElement == null ? 1 : mRowHeight * mSelectedElement.getSubCount());
 	}
 }
