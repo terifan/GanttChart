@@ -51,13 +51,13 @@ public class GanttElement implements AutoCloseable
 	}
 
 
-	public int size()
+	public int getElementCount()
 	{
 		return mElements.size();
 	}
 
 
-	public GanttElement get(int aIndex)
+	public GanttElement getElement(int aIndex)
 	{
 		return mElements.get(aIndex);
 	}

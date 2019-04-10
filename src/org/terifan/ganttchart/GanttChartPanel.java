@@ -39,6 +39,7 @@ public class GanttChartPanel extends JPanel
 	private GanttChartDetailPanel mDetailPanel;
 	private GanttElement mSelectedElement;
 	private boolean mRequestFocusOnDisplay;
+	private boolean mHideSubSegmentRanges;
 
 
 	public GanttChartPanel(GanttChart aChart, GanttChartDetailPanel aDetailPanel)
@@ -48,6 +49,7 @@ public class GanttChartPanel extends JPanel
 		mDetailPanel = aDetailPanel;
 		mChart.mPanel = this;
 		mRequestFocusOnDisplay = true;
+		mHideSubSegmentRanges = true;
 
 		MouseAdapter ma = new MouseAdapter()
 		{
@@ -91,6 +93,13 @@ public class GanttChartPanel extends JPanel
 				}
 			}
 		});
+	}
+
+
+	public GanttChartPanel setHideSubSegmentRanges(boolean aHideSubSegmentRanges)
+	{
+		mHideSubSegmentRanges = aHideSubSegmentRanges;
+		return this;
 	}
 
 
@@ -212,11 +221,10 @@ public class GanttChartPanel extends JPanel
 		long endTime = mChart.getEndTime();
 
 		int wi = w - mLabelWidth - mRightMargin;
-		int y = 0;
 
 		drawLines(g);
 
-		drawElements(g, mChart, y, w, startTime, endTime, wi);
+		drawElements(g, mChart, w, startTime, endTime, wi, 0);
 
 		drawGrid(g, wi, h);
 
@@ -265,9 +273,13 @@ public class GanttChartPanel extends JPanel
 					int y0 = start.mBounds.y + start.mBounds.height - 1 - (mRowHeight - mBarHeight) / 4;
 					int x2 = end.mBounds.x;
 					int y2 = end.mBounds.y + end.mBounds.height / 2;
-					aGraphics.drawLine(x0, y0, x1, y0);
-					aGraphics.drawLine(x1, y0, x1, y2);
-					aGraphics.drawLine(x1, y2, x2, y2);
+
+					if (x2 > x0)
+					{
+						aGraphics.drawLine(x0, y0, x1, y0);
+						aGraphics.drawLine(x1, y0, x1, y2);
+						aGraphics.drawLine(x1, y2, x2, y2);
+					}
 				}
 			}
 		}
@@ -276,25 +288,27 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	private int drawElements(Graphics2D aGraphics, GanttElement aElement, int aY, int aWidth, long aStartTime, long aEndTime, int aContentWidth)
+	private int drawElements(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex)
 	{
-		for (int i = 0, sz = aElement.size(); i < sz; i++)
+		for (int i = 0, sz = aElement.getElementCount(); i < sz; i++)
 		{
-			aY = drawElement(aGraphics, aElement.get(i), aY, aWidth, aStartTime, aEndTime, aContentWidth);
+			aRowIndex = drawElement(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex);
 
-			aY = drawElements(aGraphics, aElement.get(i), aY, aWidth, aStartTime, aEndTime, aContentWidth);
+			aRowIndex = drawElements(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex);
 		}
 
-		return aY;
+		return aRowIndex;
 	}
 
 
-	private int drawElement(Graphics2D aGraphics, GanttElement aElement, int aY, int aWidth, long aStartTime, long aEndTime, int aContentWidth)
+	private int drawElement(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex)
 	{
+		int y = aRowIndex * mRowHeight;
+
 		if (mSelectedElement == aElement)
 		{
 			aGraphics.setColor(new Color(0.0f, 0.3f, 0.6f, 0.5f));
-			aGraphics.fillRect(0, aY, aWidth, mRowHeight);
+			aGraphics.fillRect(0, y, aWidth, mRowHeight);
 		}
 
 		long startTime = aElement.getStartTime();
@@ -314,11 +328,11 @@ public class GanttChartPanel extends JPanel
 
 			if (segment.isRunning() && i == sz - 1)
 			{
-				aGraphics.drawRect(x0, aY + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight);
+				aGraphics.drawRect(x0, y + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight);
 			}
 			else
 			{
-				aGraphics.fillRect(x0, aY + (mRowHeight - mBarHeight) / 2, x1 - x0 + 1, mBarHeight + 1);
+				aGraphics.fillRect(x0, y + (mRowHeight - mBarHeight) / 2, x1 - x0 + 1, mBarHeight + 1);
 			}
 
 			if (x0 < xleft)
@@ -331,19 +345,59 @@ public class GanttChartPanel extends JPanel
 			}
 		}
 
+		if (mHideSubSegmentRanges)
+		{
+			Stroke oldStroke = aGraphics.getStroke();
+			aGraphics.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{1f}, 0.5f));
+			for (long[] range : findRanges(aElement, new ArrayList<>(), false))
+			{
+				int x0 = mLabelWidth + (int)((range[0] - aStartTime) * aContentWidth / (aEndTime - aStartTime));
+				int x1 = mLabelWidth + (int)((range[1] - aStartTime) * aContentWidth / (aEndTime - aStartTime));
+
+				aGraphics.setColor((aRowIndex & 1) == 0 ? ROW_LIGHT : ROW_DARK);
+				aGraphics.fillRect(x0 + 1, y + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight + 1);
+				aGraphics.setColor(Color.BLACK);
+				aGraphics.drawLine(x0, y + (mRowHeight - mBarHeight) / 2, x1, y + (mRowHeight - mBarHeight) / 2);
+				aGraphics.drawLine(x0, y + (mRowHeight - mBarHeight) / 2 + mBarHeight, x1, y + (mRowHeight - mBarHeight) / 2 + mBarHeight);
+			}
+			aGraphics.setStroke(oldStroke);
+		}
+
 		int x1 = mLabelWidth + (int)((endTime - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mTimeFont);
-		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, aY + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, y + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mLabelFont);
-		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2, aY + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2, y + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
 
-		aElement.mBounds.setBounds(xleft, aY, xright - xleft, mRowHeight);
+		aElement.mBounds.setBounds(xleft, y, xright - xleft, mRowHeight);
 
-		return aY + mRowHeight;
+		return aRowIndex + 1;
+	}
+
+
+	private ArrayList<long[]> findRanges(GanttElement aElement, ArrayList<long[]> aList, boolean aInclude)
+	{
+		if (aInclude)
+		{
+			for (int i = 0, sz = aElement.getSegmentCount(); i < sz; i++)
+			{
+				aList.add(new long[]
+				{
+					aElement.getSegment(i).getStartTime(), aElement.getSegment(i).getEndTime()
+				});
+			}
+		}
+
+		for (int i = 0, sz = aElement.getElementCount(); i < sz; i++)
+		{
+			findRanges(aElement.getElement(i), aList, true);
+		}
+
+		return aList;
 	}
 
 
@@ -371,7 +425,7 @@ public class GanttChartPanel extends JPanel
 	@Override
 	public Dimension preferredSize()
 	{
-		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * mChart.size());
+		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * mChart.getElementCount());
 	}
 
 
