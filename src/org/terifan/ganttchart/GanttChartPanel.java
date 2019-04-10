@@ -35,6 +35,7 @@ public class GanttChartPanel extends JPanel
 	private int mRightMargin = 50;
 	private Font mLabelFont = new Font("segoe ui", Font.PLAIN, 12);
 	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
+	private Color mSelectionColor = new Color(0.0f, 0.3f, 0.6f);
 
 	private GanttChartDetailPanel mDetailPanel;
 	private GanttElement mSelectedElement;
@@ -223,9 +224,7 @@ public class GanttChartPanel extends JPanel
 		int wi = w - mLabelWidth - mRightMargin;
 
 		drawLines(g);
-
-		drawElements(g, mChart, w, startTime, endTime, wi, 0);
-
+		drawElements(g, mChart, w, startTime, endTime, wi, 0, "");
 		drawGrid(g, wi, h);
 
 		if (mRequestFocusOnDisplay)
@@ -288,26 +287,26 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	private int drawElements(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex)
+	private int drawElements(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex, String s)
 	{
 		for (int i = 0, sz = aElement.getElementCount(); i < sz; i++)
 		{
-			aRowIndex = drawElement(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex);
+			aRowIndex = drawElement(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex, s + (aRowIndex == 0 ? " " : i == sz - 1 ? "\\" : "+"));
 
-			aRowIndex = drawElements(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex);
+			aRowIndex = drawElements(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex, s + (i == sz - 1 ? " " : "|"));
 		}
 
 		return aRowIndex;
 	}
 
 
-	private int drawElement(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex)
+	private int drawElement(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex, String s)
 	{
 		int y = aRowIndex * mRowHeight;
 
 		if (mSelectedElement == aElement)
 		{
-			aGraphics.setColor(new Color(0.0f, 0.3f, 0.6f, 0.5f));
+			aGraphics.setColor(mSelectionColor);
 			aGraphics.fillRect(0, y, aWidth, mRowHeight);
 		}
 
@@ -348,15 +347,19 @@ public class GanttChartPanel extends JPanel
 		if (mHideSubSegmentRanges)
 		{
 			Stroke oldStroke = aGraphics.getStroke();
-			aGraphics.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{1f}, 0.5f));
+			aGraphics.setStroke(new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]
+			{
+				1f
+			}, 0.5f));
 			for (long[] range : findRanges(aElement, new ArrayList<>(), false))
 			{
 				int x0 = mLabelWidth + (int)((range[0] - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 				int x1 = mLabelWidth + (int)((range[1] - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 
-				aGraphics.setColor((aRowIndex & 1) == 0 ? ROW_LIGHT : ROW_DARK);
+				aGraphics.setColor(mSelectedElement == aElement ? mSelectionColor : (aRowIndex & 1) == 0 ? ROW_LIGHT : ROW_DARK);
 				aGraphics.fillRect(x0 + 1, y + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight + 1);
-				aGraphics.setColor(Color.BLACK);
+
+				aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 				aGraphics.drawLine(x0, y + (mRowHeight - mBarHeight) / 2, x1, y + (mRowHeight - mBarHeight) / 2);
 				aGraphics.drawLine(x0, y + (mRowHeight - mBarHeight) / 2 + mBarHeight, x1, y + (mRowHeight - mBarHeight) / 2 + mBarHeight);
 			}
@@ -365,13 +368,43 @@ public class GanttChartPanel extends JPanel
 
 		int x1 = mLabelWidth + (int)((endTime - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 
+		int ty = y + mRowHeight / 2;
+
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mTimeFont);
-		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, y + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, ty + aGraphics.getFontMetrics().getDescent());
 
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mLabelFont);
-		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2, y + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2 + (s.length() - 1) * mRowHeight / 2, ty + aGraphics.getFontMetrics().getDescent());
+
+		for (int i = 0; i < s.length(); i++)
+		{
+			int x = 2 + (i - 1) * mRowHeight / 2;
+			int w = mRowHeight / 2 - 2;
+			int h = mRowHeight / 2;
+			int hh = mRowHeight;
+
+			switch (s.charAt(i))
+			{
+				case '\\':
+					aGraphics.drawLine(x, y, x, y + h);
+					aGraphics.drawLine(x, y + h, x + w, y + h);
+					break;
+				case '+':
+					aGraphics.drawLine(x, y, x, y + hh);
+					aGraphics.drawLine(x, y + h, x + w, y + h);
+					break;
+				case '|':
+					aGraphics.drawLine(x, y, x, y + hh);
+					break;
+				case '-':
+					aGraphics.drawLine(x, y + h, x + w, y + h);
+					break;
+				case ' ':
+					break;
+			}
+		}
 
 		aElement.mBounds.setBounds(xleft, y, xright - xleft, mRowHeight);
 
