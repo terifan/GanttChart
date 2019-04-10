@@ -32,25 +32,25 @@ public class DemoSimple
 			{
 				Thread.sleep(500);
 
-				try (GanttElement func2 = chart.enter("subroutine 1"))
+				try (GanttElement func2 = func1.enter("subroutine 1"))
 				{
 					Thread.sleep(500);
-					chart.tick("tick 1");
+					func2.tick("tick 1");
 					Thread.sleep(500);
-					chart.tick("tick 2");
+					func2.tick("tick 2");
 					Thread.sleep(500);
-					chart.tick("tick 3");
+					func2.tick("tick 3");
 					Thread.sleep(500);
 				}
 
-				try (GanttElement func2 = chart.enter("subroutine 2"))
+				Thread.sleep(500);
+
+				try (GanttElement func2 = func1.enter("subroutine 2"))
 				{
 					Thread.sleep(500);
-					chart.tick("tick 1");
+					func2.tick("tick 1");
 					Thread.sleep(500);
-					chart.tick("tick 2");
-					Thread.sleep(500);
-					chart.tick("tick 3");
+					func2.tick("tick 2");
 					Thread.sleep(500);
 				}
 
