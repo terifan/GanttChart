@@ -1,16 +1,21 @@
 package org.terifan.ganttchart;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JPanel;
 
@@ -203,13 +208,15 @@ public class GanttChartPanel extends JPanel
 			g.fillRect(0, y, w, mRowHeight);
 		}
 
-		long start = mChart.getStartTime();
-		long end = mChart.getEndTime();
+		long startTime = mChart.getStartTime();
+		long endTime = mChart.getEndTime();
 
 		int wi = w - mLabelWidth - mRightMargin;
 		int y = 0;
 
-		drawElements(g, mChart, y, w, start, end, wi);
+		drawLines(g);
+
+		drawElements(g, mChart, y, w, startTime, endTime, wi);
 
 		drawGrid(g, wi, h);
 
@@ -218,6 +225,54 @@ public class GanttChartPanel extends JPanel
 			requestFocus();
 			mRequestFocusOnDisplay = false;
 		}
+	}
+
+
+	private void drawLines(Graphics2D aGraphics)
+	{
+		HashMap<Object, ArrayList<GanttElement>> startPoints = new HashMap<>();
+		HashMap<Object, ArrayList<GanttElement>> endPoints = new HashMap<>();
+
+		forEach((r, e) ->
+		{
+			if (e.getFrom() != null)
+			{
+				startPoints.computeIfAbsent(e.getFrom(), x -> new ArrayList<>()).add(e);
+			}
+			if (e.getTo() != null)
+			{
+				endPoints.computeIfAbsent(e.getTo(), x -> new ArrayList<>()).add(e);
+			}
+			return null;
+		});
+
+		Stroke oldStroke = aGraphics.getStroke();
+		aGraphics.setColor(new Color(220, 220, 220));
+		aGraphics.setStroke(new BasicStroke(3f));
+
+		for (Entry<Object, ArrayList<GanttElement>> entry : startPoints.entrySet())
+		{
+			for (GanttElement end : endPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
+			{
+				int x1 = 0;
+				for (GanttElement start : startPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
+				{
+					x1 = Math.max(x1, start.mBounds.x + start.mBounds.width);
+				}
+				for (GanttElement start : startPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
+				{
+					int x0 = start.mBounds.x + start.mBounds.width;
+					int y0 = start.mBounds.y + start.mBounds.height - 1 - (mRowHeight - mBarHeight) / 4;
+					int x2 = end.mBounds.x;
+					int y2 = end.mBounds.y + end.mBounds.height / 2;
+					aGraphics.drawLine(x0, y0, x1, y0);
+					aGraphics.drawLine(x1, y0, x1, y2);
+					aGraphics.drawLine(x1, y2, x2, y2);
+				}
+			}
+		}
+
+		aGraphics.setStroke(oldStroke);
 	}
 
 
@@ -238,12 +293,15 @@ public class GanttChartPanel extends JPanel
 	{
 		if (mSelectedElement == aElement)
 		{
-			aGraphics.setColor(new Color(0, 116, 232));
+			aGraphics.setColor(new Color(0.0f, 0.3f, 0.6f, 0.5f));
 			aGraphics.fillRect(0, aY, aWidth, mRowHeight);
 		}
 
 		long startTime = aElement.getStartTime();
 		long endTime = aElement.getEndTime();
+
+		int xleft = 1 << 30;
+		int xright = 0;
 
 		for (int i = 0, sz = aElement.getSegmentCount(); i < sz; i++)
 		{
@@ -262,6 +320,15 @@ public class GanttChartPanel extends JPanel
 			{
 				aGraphics.fillRect(x0, aY + (mRowHeight - mBarHeight) / 2, x1 - x0 + 1, mBarHeight + 1);
 			}
+
+			if (x0 < xleft)
+			{
+				xleft = x0;
+			}
+			if (x1 > xright)
+			{
+				xright = x1;
+			}
 		}
 
 		int x1 = mLabelWidth + (int)((endTime - aStartTime) * aContentWidth / (aEndTime - aStartTime));
@@ -274,22 +341,27 @@ public class GanttChartPanel extends JPanel
 		aGraphics.setFont(mLabelFont);
 		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2, aY + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent());
 
+		aElement.mBounds.setBounds(xleft, aY, xright - xleft, mRowHeight);
+
 		return aY + mRowHeight;
 	}
 
 
 	private void drawGrid(Graphics2D aGraphics, int aContentWidth, int aHeight)
 	{
+		Color c0 = new Color(0.6f, 0.6f, 0.6f, 0.2f);
+		Color c1 = new Color(0.8f, 0.8f, 0.8f, 0.2f);
+
 		for (int col = 0; col <= 10; col++)
 		{
 			int x = mLabelWidth + col * aContentWidth / 10;
-			aGraphics.setColor(new Color(0.6f, 0.6f, 0.6f, 0.2f));
+			aGraphics.setColor(c0);
 			aGraphics.drawLine(x, 0, x, aHeight);
 
 			if (col < 10)
 			{
 				x += aContentWidth / 10 / 2;
-				aGraphics.setColor(new Color(0.8f, 0.8f, 0.8f, 0.2f));
+				aGraphics.setColor(c1);
 				aGraphics.drawLine(x, 0, x, aHeight);
 			}
 		}

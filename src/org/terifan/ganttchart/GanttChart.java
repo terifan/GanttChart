@@ -3,7 +3,6 @@ package org.terifan.ganttchart;
 import java.util.ArrayList;
 
 
-
 /**
  * This GanttChart implementation is used to measure performance of processes.
  */

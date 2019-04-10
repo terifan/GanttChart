@@ -1,6 +1,7 @@
 package org.terifan.ganttchart;
 
 import java.awt.Color;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 
 
@@ -30,9 +31,14 @@ public class GanttElement implements AutoCloseable
 		new Color(128, 128, 128)
 	};
 
+	protected final Rectangle mBounds = new Rectangle();
+
 	protected final GanttElement mParent;
 	protected final ArrayList<GanttSegment> mSegments;
 	protected final ArrayList<GanttElement> mElements;
+
+	protected Object mFrom;
+	protected Object mTo;
 
 	private static int ci;
 
@@ -143,5 +149,31 @@ public class GanttElement implements AutoCloseable
 	public void close()
 	{
 		exit();
+	}
+
+
+	Object getFrom()
+	{
+		return mFrom;
+	}
+
+
+	Object getTo()
+	{
+		return mTo;
+	}
+
+
+	public GanttElement from(Object aToken)
+	{
+		mFrom = aToken;
+		return this;
+	}
+
+
+	public GanttElement to(Object aToken)
+	{
+		mTo = aToken;
+		return this;
 	}
 }

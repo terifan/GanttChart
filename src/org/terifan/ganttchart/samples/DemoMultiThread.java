@@ -48,7 +48,7 @@ public class DemoMultiThread
 				{
 					elements.add(() ->
 					{
-						try (GanttElement func2 = func1.enter("doing something"))
+						try (GanttElement func2 = func1.enter("doing something").from("x"))
 						{
 							Thread.sleep(rnd.nextInt(1000));
 							try (GanttElement func3 = func2.enter("lets do it"))
@@ -79,7 +79,7 @@ public class DemoMultiThread
 
 				elements.parallelStream().forEach(Runnable::run);
 
-				try (GanttElement func2 = func1.enter("almost finished"))
+				try (GanttElement func2 = func1.enter("almost finished").to("x"))
 				{
 					Thread.sleep(100);
 					try (GanttElement func3 = func2.enter("almost there"))
