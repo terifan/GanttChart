@@ -374,9 +374,16 @@ public class GanttChartPanel extends JPanel
 		aGraphics.setFont(mTimeFont);
 		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, ty + aGraphics.getFontMetrics().getDescent());
 
+		String description = aElement.getSegment(0).getDescription();
+		int j = description.indexOf("::");
+		if (j != -1)
+		{
+			description = description.substring(0, j);
+		}
+
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mLabelFont);
-		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2 + (s.length() - 1) * mRowHeight / 2, ty + aGraphics.getFontMetrics().getDescent());
+		aGraphics.drawString(description, 2 + (s.length() - 1) * mRowHeight / 2, ty + aGraphics.getFontMetrics().getDescent());
 
 		for (int i = 0; i < s.length(); i++)
 		{

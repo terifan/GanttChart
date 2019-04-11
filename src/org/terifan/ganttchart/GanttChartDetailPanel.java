@@ -64,6 +64,13 @@ public class GanttChartDetailPanel extends JPanel
 			int x0 = (int)((t0 - startTime) * wi / (endTime - startTime));
 			int x1 = (int)((t1 - startTime) * wi / (endTime - startTime));
 
+			String description = segment.getDescription();
+			int j = description.indexOf("::");
+			if (j != -1)
+			{
+				description = description.substring(j + 2);
+			}
+
 			g.setColor(segment.getColor());
 			g.fillRect(mLabelWidth + x0, y + (mRowHeight - mBarHeight) / 2, Math.max(1, x1 - x0), mBarHeight);
 
@@ -73,7 +80,7 @@ public class GanttChartDetailPanel extends JPanel
 
 			g.setColor(Color.BLACK);
 			g.setFont(mLabelFont);
-			g.drawString(segment.getDescription(), 2, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
+			g.drawString(description, 2, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
 
 			y += mRowHeight;
 		}
