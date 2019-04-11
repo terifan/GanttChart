@@ -3,6 +3,7 @@ package org.terifan.ganttchart;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Random;
 
 
 public class GanttElement implements AutoCloseable
@@ -39,8 +40,6 @@ public class GanttElement implements AutoCloseable
 
 	protected Object mFrom;
 	protected Object mTo;
-
-	private static int ci;
 
 
 	GanttElement(GanttElement aParent)
@@ -102,7 +101,7 @@ public class GanttElement implements AutoCloseable
 			mSegments.get(mSegments.size() - 1).setEndTime(time);
 		}
 
-		mSegments.add(new GanttSegment(time, time, aDescription, COLORS[ci++ % COLORS.length]));
+		mSegments.add(new GanttSegment(time, time, aDescription, createColorFromName(aDescription)));
 	}
 
 
@@ -120,7 +119,7 @@ public class GanttElement implements AutoCloseable
 
 		GanttElement element = new GanttElement(this);
 
-		element.add(new GanttSegment(time, time, aDescription, COLORS[ci++ % COLORS.length]));
+		element.add(new GanttSegment(time, time, aDescription, createColorFromName(aDescription)));
 
 		mElements.add(element);
 
@@ -175,5 +174,11 @@ public class GanttElement implements AutoCloseable
 	{
 		mTo = aToken;
 		return this;
+	}
+
+
+	private static Color createColorFromName(String aDescription)
+	{
+		return COLORS[new Random(aDescription.hashCode()).nextInt(COLORS.length)];
 	}
 }
