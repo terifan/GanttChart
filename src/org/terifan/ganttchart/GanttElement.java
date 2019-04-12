@@ -92,7 +92,7 @@ public class GanttElement implements AutoCloseable
 	}
 
 
-	public void tick(String aDescription)
+	public void tick(String aSegmentName)
 	{
 		long time = System.nanoTime();
 
@@ -101,25 +101,43 @@ public class GanttElement implements AutoCloseable
 			mSegments.get(mSegments.size() - 1).setEndTime(time);
 		}
 
-		mSegments.add(new GanttSegment(time, time, aDescription, createColorFromName(aDescription)));
+		mSegments.add(new GanttSegment(time, time, aSegmentName, createColorFromName(aSegmentName)));
 	}
 
 
 	/**
 	 * Creates a new element below the current element.
 	 *
-	 * @param aDescription
+	 * @param aElementName
 	 *   a name or description of the element
 	 * @return
 	 *   the new element
 	 */
-	public synchronized GanttElement enter(String aDescription)
+	public GanttElement enter(String aElementName)
+	{
+		return enter(aElementName, null);
+	}
+
+
+	/**
+	 * Creates a new element below the current element.
+	 *
+	 * @param aElementName
+	 *   a name or description of the element
+	 * @param aSegmentName
+	 *
+	 * @return
+	 *   the new element
+	 */
+	public synchronized GanttElement enter(String aElementName, String aSegmentName)
 	{
 		long time = System.nanoTime();
 
+		String name = aSegmentName == null ? aElementName : aElementName + "::" + aSegmentName;
+
 		GanttElement element = new GanttElement(this);
 
-		element.add(new GanttSegment(time, time, aDescription, createColorFromName(aDescription)));
+		element.add(new GanttSegment(time, time, name, createColorFromName(name)));
 
 		mElements.add(element);
 

@@ -51,7 +51,7 @@ public class DemoMultiThread
 						try (GanttElement func2 = func1.enter("doing something").from("x"))
 						{
 							Thread.sleep(rnd.nextInt(1000));
-							try (GanttElement func3 = func2.enter("lets do it::first step"))
+							try (GanttElement func3 = func2.enter("lets do it", "first step"))
 							{
 								Thread.sleep(rnd.nextInt(1000));
 								func3.tick("middle step");

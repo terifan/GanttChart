@@ -2,29 +2,16 @@ package org.terifan.ganttchart;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.swing.JPanel;
 
 
-public class GanttChartPanel extends JPanel
+public class GanttElementRenderer
 {
-	private final static long serialVersionUID = 1L;
-	private final GanttChart mChart;
-
 	private final static Color ROW_LIGHT = new Color(255, 255, 255);
 	private final static Color ROW_DARK = new Color(242, 242, 242);
 	private final static int MINIMUM_WIDTH = 50;
@@ -38,181 +25,24 @@ public class GanttChartPanel extends JPanel
 	private Color mSelectionColor = new Color(0.0f, 0.3f, 0.6f);
 	private BasicStroke mDottedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{1f}, 0.5f);
 	private int mIndent = 18;
-
-	private GanttChartDetailPanel mDetailPanel;
-	private GanttElement mSelectedElement;
-	private boolean mRequestFocusOnDisplay;
 	private boolean mHideSubSegmentRanges;
 
-
-	public GanttChartPanel(GanttChart aChart, GanttChartDetailPanel aDetailPanel)
-	{
-		mChart = aChart;
-
-		mDetailPanel = aDetailPanel;
-		mChart.mPanel = this;
-		mRequestFocusOnDisplay = true;
-		mHideSubSegmentRanges = true;
-
-		MouseAdapter ma = new MouseAdapter()
-		{
-			@Override
-			public void mouseDragged(MouseEvent aEvent)
-			{
-				setSelectedRowIndex(aEvent.getY() / mRowHeight);
-			}
+	private GanttChart mGanttChart;
+	private GanttElement mSelectedElement;
 
 
-			@Override
-			public void mousePressed(MouseEvent aEvent)
-			{
-				requestFocus();
-				setSelectedRowIndex(aEvent.getY() / mRowHeight);
-			}
-		};
-
-		addMouseListener(ma);
-		addMouseMotionListener(ma);
-
-		addKeyListener(new KeyAdapter()
-		{
-			@Override
-			public void keyPressed(KeyEvent aEvent)
-			{
-				switch (aEvent.getKeyCode())
-				{
-					case KeyEvent.VK_UP:
-						setSelectedRowIndex(Math.max(getSelectedRowIndex() - 1, 0));
-						break;
-					case KeyEvent.VK_DOWN:
-						setSelectedRowIndex(Math.min(getSelectedRowIndex() + 1, getElementCount() - 1));
-						break;
-					case KeyEvent.VK_END:
-						setSelectedRowIndex(Math.max(getElementCount() - 1, 0));
-						break;
-					case KeyEvent.VK_HOME:
-						setSelectedRowIndex(0);
-						break;
-				}
-			}
-		});
-	}
-
-
-	public GanttChartPanel setHideSubSegmentRanges(boolean aHideSubSegmentRanges)
-	{
-		mHideSubSegmentRanges = aHideSubSegmentRanges;
-		return this;
-	}
-
-
-	public GanttElement getSelectedElement()
-	{
-		return mSelectedElement;
-	}
-
-
-	public int getSelectedRowIndex()
-	{
-		Object o = forEach((r, e) -> e == mSelectedElement ? r : null);
-
-		return o == null ? -1 : (Integer)o;
-	}
-
-
-	public void setSelectedRowIndex(int aRowIndex)
-	{
-		if (aRowIndex < 0)
-		{
-			return;
-		}
-
-		GanttElement o = getElement(aRowIndex);
-
-		if (o != null)
-		{
-			mSelectedElement = o;
-
-			if (mDetailPanel != null)
-			{
-				mDetailPanel.setSelectedElement(mSelectedElement);
-				mDetailPanel.repaint();
-			}
-
-			repaint();
-		}
-	}
-
-
-	public GanttElement getElement(int aRowIndex)
-	{
-		return (GanttElement)forEach((r, e) -> r == aRowIndex ? e : null);
-	}
-
-
-	public int getElementCount()
-	{
-		AtomicInteger counter = new AtomicInteger();
-
-		forEach((r, e) ->
-		{
-			counter.set(r + 1);
-			return null;
-		});
-
-		return counter.get();
-	}
-
-
-	public Object forEach(Visitor aVisitor)
-	{
-		ArrayDeque<GanttElement> stack = new ArrayDeque<>();
-		stack.add(mChart);
-
-		int row = -1;
-
-		while (!stack.isEmpty())
-		{
-			GanttElement element = stack.removeFirst();
-
-			Object o = aVisitor.visit(row, element);
-
-			if (o != null)
-			{
-				return o;
-			}
-
-			row++;
-
-			for (int j = element.mElements.size(); --j >= 0;)
-			{
-				stack.addFirst(element.mElements.get(j));
-			}
-		}
-
-		return null;
-	}
-
-
-	public interface Visitor
-	{
-		Object visit(int aRow, GanttElement aElement);
-	}
-
-
-	@Override
-	protected void paintComponent(Graphics aGraphics)
+	protected void paintComponent(Graphics aGraphics, int aX, int aY, int aWidth, int aHeight)
 	{
 		Graphics2D g = (Graphics2D)aGraphics;
 
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
-		int h = getHeight();
+		int w = Math.max(aWidth, mLabelWidth + mRightMargin + MINIMUM_WIDTH);
+		int h = aHeight;
 
 		g.setColor(Color.WHITE);
-		g.fillRect(0, 0, w, getHeight());
+		g.fillRect(0, 0, w, aHeight);
 
 		for (int i = 0, y = 0; y < h; i++, y += mRowHeight)
 		{
@@ -220,73 +50,67 @@ public class GanttChartPanel extends JPanel
 			g.fillRect(0, y, w, mRowHeight);
 		}
 
-		long startTime = mChart.getStartTime();
-		long endTime = mChart.getEndTime();
+		long startTime = mGanttChart.getStartTime();
+		long endTime = mGanttChart.getEndTime();
 
 		int wi = w - mLabelWidth - mRightMargin;
 
-		drawFlowLines(g);
-		drawElements(g, mChart, w, startTime, endTime, wi, 0, "");
+//		drawFlowLines(g);
+		drawElements(g, mGanttChart, w, startTime, endTime, wi, 0, "");
 		drawGrid(g, wi, h);
-
-		if (mRequestFocusOnDisplay)
-		{
-			requestFocus();
-			mRequestFocusOnDisplay = false;
-		}
 	}
 
 
-	private void drawFlowLines(Graphics2D aGraphics)
-	{
-		HashMap<Object, ArrayList<GanttElement>> startPoints = new HashMap<>();
-		HashMap<Object, ArrayList<GanttElement>> endPoints = new HashMap<>();
-
-		forEach((r, e) ->
-		{
-			if (e.getFrom() != null)
-			{
-				startPoints.computeIfAbsent(e.getFrom(), x -> new ArrayList<>()).add(e);
-			}
-			if (e.getTo() != null)
-			{
-				endPoints.computeIfAbsent(e.getTo(), x -> new ArrayList<>()).add(e);
-			}
-			return null;
-		});
-
-		Stroke oldStroke = aGraphics.getStroke();
-		aGraphics.setColor(new Color(220, 220, 220));
-		aGraphics.setStroke(new BasicStroke(3f));
-
-		for (Entry<Object, ArrayList<GanttElement>> entry : startPoints.entrySet())
-		{
-			for (GanttElement end : endPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
-			{
-				int x1 = 0;
-				for (GanttElement start : startPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
-				{
-					x1 = Math.max(x1, start.mBounds.x + start.mBounds.width);
-				}
-				for (GanttElement start : startPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
-				{
-					int x0 = start.mBounds.x + start.mBounds.width;
-					int y0 = start.mBounds.y + start.mBounds.height - 1 - (mRowHeight - mBarHeight) / 4;
-					int x2 = end.mBounds.x;
-					int y2 = end.mBounds.y + end.mBounds.height / 2;
-
-					if (x2 > x0)
-					{
-						aGraphics.drawLine(x0, y0, x1, y0);
-						aGraphics.drawLine(x1, y0, x1, y2);
-						aGraphics.drawLine(x1, y2, x2, y2);
-					}
-				}
-			}
-		}
-
-		aGraphics.setStroke(oldStroke);
-	}
+//	private void drawFlowLines(Graphics2D aGraphics)
+//	{
+//		HashMap<Object, ArrayList<GanttElement>> startPoints = new HashMap<>();
+//		HashMap<Object, ArrayList<GanttElement>> endPoints = new HashMap<>();
+//
+//		forEach((r, e) ->
+//		{
+//			if (e.getFrom() != null)
+//			{
+//				startPoints.computeIfAbsent(e.getFrom(), x -> new ArrayList<>()).add(e);
+//			}
+//			if (e.getTo() != null)
+//			{
+//				endPoints.computeIfAbsent(e.getTo(), x -> new ArrayList<>()).add(e);
+//			}
+//			return null;
+//		});
+//
+//		Stroke oldStroke = aGraphics.getStroke();
+//		aGraphics.setColor(new Color(220, 220, 220));
+//		aGraphics.setStroke(new BasicStroke(3f));
+//
+//		for (Entry<Object, ArrayList<GanttElement>> entry : startPoints.entrySet())
+//		{
+//			for (GanttElement end : endPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
+//			{
+//				int x1 = 0;
+//				for (GanttElement start : startPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
+//				{
+//					x1 = Math.max(x1, start.mBounds.x + start.mBounds.width);
+//				}
+//				for (GanttElement start : startPoints.computeIfAbsent(entry.getKey(), e -> new ArrayList<>()))
+//				{
+//					int x0 = start.mBounds.x + start.mBounds.width;
+//					int y0 = start.mBounds.y + start.mBounds.height - 1 - (mRowHeight - mBarHeight) / 4;
+//					int x2 = end.mBounds.x;
+//					int y2 = end.mBounds.y + end.mBounds.height / 2;
+//
+//					if (x2 > x0)
+//					{
+//						aGraphics.drawLine(x0, y0, x1, y0);
+//						aGraphics.drawLine(x1, y0, x1, y2);
+//						aGraphics.drawLine(x1, y2, x2, y2);
+//					}
+//				}
+//			}
+//		}
+//
+//		aGraphics.setStroke(oldStroke);
+//	}
 
 
 	private int drawElements(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex, String aTreePath)
@@ -498,13 +322,6 @@ public class GanttChartPanel extends JPanel
 				aGraphics.drawLine(x, 0, x, aHeight);
 			}
 		}
-	}
-
-
-	@Override
-	public Dimension preferredSize()
-	{
-		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * mChart.getElementCount());
 	}
 
 
