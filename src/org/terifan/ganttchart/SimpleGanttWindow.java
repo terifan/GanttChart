@@ -63,7 +63,6 @@ public class SimpleGanttWindow
 			protected void paintComponent(Graphics aGraphics)
 			{
 				Rectangle bounds = getBounds();
-
 				aGraphics.setColor(getBackground());
 				aGraphics.fillRect(bounds.x, bounds.y, getWidth(), getHeight());
 				aGraphics.setColor(getForeground());
@@ -80,7 +79,9 @@ public class SimpleGanttWindow
 			@Override
 			public JComponent getListViewCellRendererComponent(ListView aListView, Entry aItem, int aItemIndex, int aColumnIndex, boolean aIsSelected, boolean aIsFocused, boolean aIsRollover, boolean aIsSorted)
 			{
-				ganttComponent.setBackground(((aItemIndex) & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242));
+				Color bg = (aItemIndex & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242);
+
+				ganttComponent.setBackground(aIsSelected ? aListView.getStyles().itemSelectedBackground : bg);
 				ganttComponent.setText("xxxxxxxx" + aItem.text);
 				return ganttComponent;
 			}
@@ -91,8 +92,10 @@ public class SimpleGanttWindow
 			@Override
 			public JComponent getListViewCellRendererComponent(ListView aListView, Entry aItem, int aItemIndex, int aColumnIndex, boolean aIsSelected, boolean aHasFocus, boolean aIsRollover, boolean aIsSorted)
 			{
+				Color bg = (aItemIndex & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242);
+
 				JComponent comp = super.getListViewCellRendererComponent(aListView, aItem, aItemIndex, aColumnIndex, aIsSelected, aHasFocus, aIsRollover, aIsSorted);
-				comp.setBackground(((aItemIndex) & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242));
+				comp.setBackground(bg);
 				return comp;
 			}
 		};
