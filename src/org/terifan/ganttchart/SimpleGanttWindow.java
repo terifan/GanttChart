@@ -71,7 +71,7 @@ public class SimpleGanttWindow
 
 				aGraphics.setColor(Color.RED);
 				aGraphics.fillOval(bounds.x+bounds.width/2-5, bounds.y+bounds.height/2-5, 10, 10);
-				aGraphics.fillOval(bounds.x+bounds.width-105, bounds.y+bounds.height/2-5, 10, 10);
+				aGraphics.fillOval(bounds.x+bounds.width-5, bounds.y+bounds.height/2-5, 10, 10);
 			}
 		};
 
