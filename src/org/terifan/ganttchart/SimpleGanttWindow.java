@@ -15,7 +15,6 @@ import org.terifan.ui.listview.ColumnHeaderRenderer;
 import org.terifan.ui.listview.ListView;
 import org.terifan.ui.listview.ListViewCellRenderer;
 import org.terifan.ui.listview.ListViewModel;
-import org.terifan.ui.listview.layout.Colors;
 import org.terifan.ui.listview.layout.DetailItemRenderer;
 import org.terifan.ui.listview.layout.DetailItemValueRenderer;
 
@@ -58,7 +57,7 @@ public class SimpleGanttWindow
 		model.addItem(new Entry("ceasar", 3));
 		model.addItem(new Entry("david", 4));
 
-		JLabel comp = new JLabel()
+		JLabel ganttComponent = new JLabel()
 		{
 			@Override
 			protected void paintComponent(Graphics aGraphics)
@@ -76,6 +75,28 @@ public class SimpleGanttWindow
 			}
 		};
 
+		ListViewCellRenderer<Entry> ganttColumnRenderer = new DetailItemValueRenderer<Entry>()
+		{
+			@Override
+			public JComponent getListViewCellRendererComponent(ListView aListView, Entry aItem, int aItemIndex, int aColumnIndex, boolean aIsSelected, boolean aIsFocused, boolean aIsRollover, boolean aIsSorted)
+			{
+				ganttComponent.setBackground(((aItemIndex) & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242));
+				ganttComponent.setText("xxxxxxxx" + aItem.text);
+				return ganttComponent;
+			}
+		};
+
+		ListViewCellRenderer<Entry> defaultCellRenderer = new DetailItemValueRenderer<Entry>()
+		{
+			@Override
+			public JComponent getListViewCellRendererComponent(ListView aListView, Entry aItem, int aItemIndex, int aColumnIndex, boolean aIsSelected, boolean aHasFocus, boolean aIsRollover, boolean aIsSorted)
+			{
+				JComponent comp = super.getListViewCellRendererComponent(aListView, aItem, aItemIndex, aColumnIndex, aIsSelected, aHasFocus, aIsRollover, aIsSorted);
+				comp.setBackground(((aItemIndex) & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242));
+				return comp;
+			}
+		};
+
 		DetailItemRenderer renderer = new DetailItemRenderer()
 		{
 			@Override
@@ -83,37 +104,15 @@ public class SimpleGanttWindow
 			{
 				if (aColumnIndex == 2)
 				{
-					return new DetailItemValueRenderer<Entry>()
-					{
-						@Override
-						public JComponent getListViewCellRendererComponent(ListView aListView, Entry aItem, int aItemIndex, int aColumnIndex, boolean aIsSelected, boolean aIsFocused, boolean aIsRollover, boolean aIsSorted)
-						{
-							comp.setBackground(((aItemIndex) & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242));
-
-							comp.setText("xxxxxxxx" + aItem.text);
-
-							return comp;
-						}
-					};
+					return ganttColumnRenderer;
 				}
 
-				ListViewCellRenderer<Entry> cellRenderer = new DetailItemValueRenderer<Entry>()
-				{
-					@Override
-					public JComponent getListViewCellRendererComponent(ListView aListView, Entry aItem, int aItemIndex, int aColumnIndex, boolean aIsSelected, boolean aHasFocus, boolean aIsRollover, boolean aIsSorted)
-					{
-						JComponent comp = super.getListViewCellRendererComponent(aListView, aItem, aItemIndex, aColumnIndex, aIsSelected, aHasFocus, aIsRollover, aIsSorted);
-
-						comp.setBackground(((aItemIndex) & 1) == 0 ? new Color(255, 255, 255) : new Color(242, 242, 242));
-
-						return comp;
-					}
-				};
-
-				return cellRenderer;
+				return defaultCellRenderer;
 			}
 		};
 
+//		renderer.setDefaultRenderer(defaultCellRenderer);
+//		renderer.setCellRenderer(2, ganttColumnRenderer);
 		renderer.setExtendLastItem(true);
 
 		ListView listView = new ListView(model);
