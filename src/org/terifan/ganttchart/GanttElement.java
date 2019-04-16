@@ -101,7 +101,7 @@ public class GanttElement implements AutoCloseable
 			mSegments.get(mSegments.size() - 1).setEndTime(time);
 		}
 
-		mSegments.add(new GanttSegment(time, time, aSegmentName, createColorFromName(aSegmentName)));
+		mSegments.add(new GanttSegment(time, time, createColorFromName(aSegmentName), aSegmentName, null));
 	}
 
 
@@ -133,11 +133,9 @@ public class GanttElement implements AutoCloseable
 	{
 		long time = System.nanoTime();
 
-		String name = aSegmentName == null ? aElementName : aElementName + "::" + aSegmentName;
-
 		GanttElement element = new GanttElement(this);
 
-		element.add(new GanttSegment(time, time, name, createColorFromName(name)));
+		element.add(new GanttSegment(time, time, createColorFromName(aElementName + aSegmentName), aElementName, aSegmentName));
 
 		mElements.add(element);
 

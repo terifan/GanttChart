@@ -8,15 +8,17 @@ public class GanttSegment
 	protected long mStartTime;
 	protected long mEndTime;
 	protected String mDescription;
+	protected String mSegmentDescription;
 	protected Color mColor;
 
 
-	public GanttSegment(long aStartTime, long aEndTime, String aDescription, Color aColor)
+	public GanttSegment(long aStartTime, long aEndTime, Color aColor, String aDescription, String aSegmentDescription)
 	{
 		mStartTime = aStartTime;
 		mEndTime = aEndTime;
-		mDescription = aDescription;
 		mColor = aColor;
+		mDescription = aDescription;
+		mSegmentDescription = aSegmentDescription;
 	}
 
 
@@ -41,6 +43,12 @@ public class GanttSegment
 	public String getDescription()
 	{
 		return mDescription;
+	}
+
+
+	public String getSegmentDescription()
+	{
+		return mSegmentDescription != null ? mSegmentDescription : mDescription;
 	}
 
 

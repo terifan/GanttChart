@@ -12,12 +12,18 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JViewport;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 
 
 public class GanttChartPanel extends JPanel
@@ -36,13 +42,17 @@ public class GanttChartPanel extends JPanel
 	private Font mLabelFont = new Font("segoe ui", Font.PLAIN, 12);
 	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
 	private Color mSelectionColor = new Color(0.0f, 0.3f, 0.6f);
-	private BasicStroke mDottedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{1f}, 0.5f);
+	private BasicStroke mDottedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]
+	{
+		1f
+	}, 0.5f);
 	private int mIndent = 18;
 
 	private GanttChartDetailPanel mDetailPanel;
 	private GanttElement mSelectedElement;
 	private boolean mRequestFocusOnDisplay;
 	private boolean mHideSubSegmentRanges;
+	private boolean mIsConfigured;
 
 
 	public GanttChartPanel(GanttChart aChart, GanttChartDetailPanel aDetailPanel)
@@ -103,6 +113,14 @@ public class GanttChartPanel extends JPanel
 	{
 		mHideSubSegmentRanges = aHideSubSegmentRanges;
 		return this;
+	}
+
+
+	@Override
+	public void addNotify()
+	{
+		super.addNotify();
+		configureEnclosingScrollPane();
 	}
 
 
@@ -209,6 +227,7 @@ public class GanttChartPanel extends JPanel
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 		int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
+		int wi = w - mLabelWidth - mRightMargin;
 		int h = getHeight();
 
 		g.setColor(Color.WHITE);
@@ -222,8 +241,6 @@ public class GanttChartPanel extends JPanel
 
 		long startTime = mChart.getStartTime();
 		long endTime = mChart.getEndTime();
-
-		int wi = w - mLabelWidth - mRightMargin;
 
 		drawFlowLines(g);
 		drawElements(g, mChart, w, startTime, endTime, wi, 0, "");
@@ -293,7 +310,7 @@ public class GanttChartPanel extends JPanel
 	{
 		for (int i = 0, sz = aElement.getElementCount(); i < sz; i++)
 		{
-			aRowIndex = drawElement(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex, aTreePath + (aRowIndex == 0 ? " " : i == sz - 1 ? "\\" : "+"));
+			aRowIndex = drawElement(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex, aTreePath + (aRowIndex == 0 ? " " : i == sz - 1 ? "." : "+"));
 
 			aRowIndex = drawElements(aGraphics, aElement.getElement(i), aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex, aTreePath + (i == sz - 1 ? " " : "|"));
 		}
@@ -371,7 +388,7 @@ public class GanttChartPanel extends JPanel
 		aGraphics.setFont(mTimeFont);
 		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, y + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent() + 1);
 
-		drawElementLabel(aGraphics, aElement, aWidth, aStartTime, aEndTime, aContentWidth, aRowIndex, aTreePath);
+		drawElementLabel(aGraphics, aElement, aRowIndex, aTreePath);
 
 		aElement.mBounds.setBounds(xleft, y, xright - xleft, mRowHeight);
 
@@ -379,21 +396,14 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	private void drawElementLabel(Graphics2D aGraphics, GanttElement aElement, int aWidth, long aStartTime, long aEndTime, int aContentWidth, int aRowIndex, String aTreePath)
+	private void drawElementLabel(Graphics2D aGraphics, GanttElement aElement, int aRowIndex, String aTreePath)
 	{
 		int y = aRowIndex * mRowHeight;
 		int ty = y + mRowHeight / 2;
 
-		String description = aElement.getSegment(0).getDescription();
-		int j = description.indexOf("::");
-		if (j != -1)
-		{
-			description = description.substring(0, j);
-		}
-
 		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
 		aGraphics.setFont(mLabelFont);
-		aGraphics.drawString(description, 2 + (aTreePath.length() - 1) * mIndent, ty + aGraphics.getFontMetrics().getDescent() + 1);
+		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2 + (aTreePath.length() - 1) * mIndent, ty + aGraphics.getFontMetrics().getDescent() + 1);
 
 		if (mIndent > 0)
 		{
@@ -409,7 +419,7 @@ public class GanttChartPanel extends JPanel
 
 				switch (aTreePath.charAt(i))
 				{
-					case '\\':
+					case '.':
 						aGraphics.drawLine(x + 5, y, x + 5, y + h);
 						aGraphics.drawLine(x + 5, y + h, x + w, y + h);
 						break;
@@ -427,10 +437,10 @@ public class GanttChartPanel extends JPanel
 						break;
 				}
 
-				if (aElement.getElementCount() > 0)
-				{
-					drawElementTreeIcon(aGraphics, oldStroke, x, y, h);
-				}
+//				if (aElement.getElementCount() > 0)
+//				{
+//					drawElementTreeIcon(aGraphics, oldStroke, x, y, h, 2);
+//				}
 			}
 
 			aGraphics.setStroke(oldStroke);
@@ -438,7 +448,7 @@ public class GanttChartPanel extends JPanel
 	}
 
 
-	private void drawElementTreeIcon(Graphics2D aGraphics, Stroke aOldStroke, int aX, int aY, int aH)
+	private void drawElementTreeIcon(Graphics2D aGraphics, Stroke aOldStroke, int aX, int aY, int aRowHalfHeight, int aIcon)
 	{
 		Stroke oldStroke = aGraphics.getStroke();
 		Color oldColor = aGraphics.getColor();
@@ -446,12 +456,16 @@ public class GanttChartPanel extends JPanel
 		aGraphics.setStroke(aOldStroke);
 
 		aGraphics.setColor(Color.WHITE);
-		aGraphics.fillRoundRect(aX, aY + aH - 5, 10, 10, 4, 4);
+		aGraphics.fillRect(aX, aY + aRowHalfHeight - 4, 8, 8);
 
 		aGraphics.setColor(Color.BLACK);
-		aGraphics.drawRoundRect(aX, aY + aH - 5, 10, 10, 4, 4);
-		aGraphics.drawLine(aX + 2, aY + aH, aX + 8, aY + aH);
-//		aGraphics.drawLine(x + 5, y + h - 3, x + 5, y + h + 3);
+		aGraphics.drawRect(aX, aY + aRowHalfHeight - 4, 8, 8);
+		aGraphics.drawLine(aX + 2, aY + aRowHalfHeight, aX + 6, aY + aRowHalfHeight);
+
+		if (aIcon == 2)
+		{
+			aGraphics.drawLine(aX + 4, aY + aRowHalfHeight - 2, aX + 4, aY + aRowHalfHeight + 2);
+		}
 
 		aGraphics.setColor(oldColor);
 		aGraphics.setStroke(oldStroke);
@@ -501,10 +515,131 @@ public class GanttChartPanel extends JPanel
 	}
 
 
+	public void configureEnclosingScrollPane()
+	{
+		mIsConfigured = true;
+
+		JScrollPane scrollPane = getEnclosingScrollPane();
+
+		if (scrollPane != null)
+		{
+			JViewport viewport = scrollPane.getViewport();
+
+			if (viewport == null || viewport.getView() != this)
+			{
+				return;
+			}
+
+			scrollPane.setColumnHeaderView(new TableHeader());
+			scrollPane.setCorner(ScrollPaneConstants.UPPER_LEFT_CORNER, new TableCorner());
+			scrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, new TableCorner());
+			scrollPane.setBorder(null);
+		}
+	}
+
+
+	private class TableHeader extends JPanel
+	{
+		private BufferedImage mBackground;
+		private BufferedImage mSeparator;
+
+
+		public TableHeader()
+		{
+			try
+			{
+				mBackground = ImageIO.read(GanttChartPanel.class.getResource("column_header_background_normal.png"));
+				mSeparator = ImageIO.read(GanttChartPanel.class.getResource("column_header_seperator_normal.png"));
+			}
+			catch (Exception | Error e)
+			{
+			}
+		}
+
+
+		@Override
+		protected void paintComponent(Graphics aGraphics)
+		{
+			Graphics2D g = (Graphics2D)aGraphics;
+
+			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
+			int wi = w - mLabelWidth - mRightMargin;
+			int h = getHeight();
+
+			g.drawImage(mBackground, 0, 0, w, h, this);
+			g.setColor(new Color(220, 220, 220));
+			g.drawLine(0, h - 1, w, h - 1);
+
+			g.setColor(Color.BLACK);
+			g.drawString("Name", 5, h / 2 + aGraphics.getFontMetrics().getDescent() + 1);
+
+			for (int i = 0; i <= 5; i++)
+			{
+				g.drawImage(mSeparator, 200 + wi * i / 5, 0, 1, h, null);
+			}
+		}
+
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			return new Dimension(1, mRowHeight);
+		}
+	};
+
+
+	private class TableCorner extends JPanel
+	{
+		private BufferedImage mBackground;
+
+
+		public TableCorner()
+		{
+			try
+			{
+				mBackground = ImageIO.read(GanttChartPanel.class.getResource("column_header_background_normal.png"));
+			}
+			catch (Exception | Error e)
+			{
+			}
+		}
+
+
+		@Override
+		protected void paintComponent(Graphics aGraphics)
+		{
+			Graphics2D g = (Graphics2D)aGraphics;
+
+			int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
+			int h = getHeight();
+
+			aGraphics.drawImage(mBackground, 0, 0, w, h, this);
+			g.setColor(new Color(220, 220, 220));
+			g.drawLine(0, h - 1, w, h - 1);
+		}
+
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			return new Dimension(1, mRowHeight);
+		}
+	};
+
+
+	protected JScrollPane getEnclosingScrollPane()
+	{
+		return (JScrollPane)SwingUtilities.getAncestorOfClass(JScrollPane.class, this);
+	}
+
+
 	@Override
 	public Dimension preferredSize()
 	{
-		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * mChart.getElementCount());
+		return new Dimension(mLabelWidth + MINIMUM_WIDTH + mRightMargin, mRowHeight * getElementCount());
 	}
 
 
