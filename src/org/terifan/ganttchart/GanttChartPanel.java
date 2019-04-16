@@ -292,7 +292,7 @@ public class GanttChartPanel extends JPanel
 					int x2 = end.mBounds.x;
 					int y2 = end.mBounds.y + end.mBounds.height / 2;
 
-					if (x2 > x0)
+					if (x2 >= x0)
 					{
 						aGraphics.drawLine(x0, y0, x1, y0);
 						aGraphics.drawLine(x1, y0, x1, y2);
@@ -332,8 +332,8 @@ public class GanttChartPanel extends JPanel
 		long startTime = aElement.getStartTime();
 		long endTime = aElement.getEndTime();
 
-		int xleft = 1 << 30;
-		int xright = 0;
+		int xl = 1 << 30;
+		int xr = 0;
 
 		for (int i = 0, sz = aElement.getSegmentCount(); i < sz; i++)
 		{
@@ -353,13 +353,13 @@ public class GanttChartPanel extends JPanel
 				aGraphics.fillRect(x0, y + (mRowHeight - mBarHeight) / 2, x1 - x0 + 1, mBarHeight + 1);
 			}
 
-			if (x0 < xleft)
+			if (x0 < xl)
 			{
-				xleft = x0;
+				xl = x0;
 			}
-			if (x1 > xright)
+			if (x1 > xr)
 			{
-				xright = x1;
+				xr = x1;
 			}
 		}
 
@@ -390,7 +390,7 @@ public class GanttChartPanel extends JPanel
 
 		drawElementLabel(aGraphics, aElement, aRowIndex, aTreePath);
 
-		aElement.mBounds.setBounds(xleft, y, xright - xleft, mRowHeight);
+		aElement.mBounds.setBounds(xl, y, xr - xl, mRowHeight);
 
 		return aRowIndex + 1;
 	}

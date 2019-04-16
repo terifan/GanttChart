@@ -94,6 +94,8 @@ public class DemoMultiThread
 				}
 				Thread.sleep(50);
 			}
+
+			timer.cancel();
 		}
 		catch (Throwable e)
 		{
