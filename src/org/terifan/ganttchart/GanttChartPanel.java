@@ -2,16 +2,20 @@ package org.terifan.ganttchart;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.Toolkit;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -543,6 +547,9 @@ public class GanttChartPanel extends JPanel
 		private BufferedImage mBackground;
 		private BufferedImage mSeparator;
 
+		private Cursor mCursorSplit;
+		private Cursor mCursorResize;
+
 
 		public TableHeader()
 		{
@@ -550,6 +557,9 @@ public class GanttChartPanel extends JPanel
 			{
 				mBackground = ImageIO.read(GanttChartPanel.class.getResource("column_header_background_normal.png"));
 				mSeparator = ImageIO.read(GanttChartPanel.class.getResource("column_header_seperator_normal.png"));
+
+				mCursorSplit = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(GanttChartPanel.class.getResource("cursor_split.png")), new Point(16,16), "split");
+				mCursorResize = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(GanttChartPanel.class.getResource("cursor_resize.png")), new Point(16,16), "resize");
 			}
 			catch (Exception | Error e)
 			{
@@ -589,6 +599,142 @@ public class GanttChartPanel extends JPanel
 			return new Dimension(1, mRowHeight);
 		}
 	};
+
+	
+//	private class MouseMotionListener extends MouseMotionAdapter
+//	{
+//		@Override
+//		public void mouseMoved(MouseEvent aEvent)
+//		{
+//			int newIndex = columnAtPoint(aEvent.getPoint());
+//
+//			if (newIndex != -1 && newIndex != mRolloverColumnIndex)
+//			{
+//				mRolloverColumnIndex = newIndex;
+//				repaint();
+//			}
+//
+//			ListViewModel model = mListView.getModel();
+//
+//			int x = mListView.getListViewLayout().getMarginLeft();
+//
+//			int resizableColumnCount = model.getColumnCount();
+//
+//			if (mListView.getHeaderRenderer().getExtendLastItem())
+//			{
+//				resizableColumnCount--;
+//			}
+//
+//			for (int i = 0; i < resizableColumnCount; i++)
+//			{
+//				ListViewColumn column = model.getColumn(i);
+//
+//				if (!column.isVisible())
+//				{
+//					continue;
+//				}
+//
+//				int w = column.getWidth();
+//				x += w;
+//
+//				if (aEvent.getX() >= x - 5 && aEvent.getX() <= x + 5)
+//				{
+//					ListViewColumn nextColumn = null;
+//					int nextColumnIndex = 0;
+//
+//					for (int j = i + 1; j < model.getColumnCount(); j++)
+//					{
+//						ListViewColumn tmp = model.getColumn(j);
+//						if (tmp.isVisible())
+//						{
+//							nextColumn = tmp;
+//							nextColumnIndex = j;
+//							break;
+//						}
+//					}
+//
+//					if (nextColumn != null && nextColumn.getWidth() == 0 && aEvent.getX() > x)
+//					{
+//						mIsResizeColumnArmed = true;
+//						setCursor(mListView.getStyles().cursorSplit);
+//						mResizeColumnIndex = nextColumnIndex;
+//					}
+//					else if (nextColumn != null && nextColumn.getWidth() < 3 && aEvent.getX() > x)
+//					{
+//						mIsResizeColumnArmed = true;
+//						setCursor(mListView.getStyles().cursorResize);
+//						mResizeColumnIndex = nextColumnIndex;
+//					}
+//					else
+//					{
+//						mIsResizeColumnArmed = true;
+//						setCursor(mListView.getStyles().cursorResize);
+//						mResizeColumnIndex = i;
+//					}
+//
+//					return;
+//				}
+//			}
+//
+//			if (mIsResizeColumnArmed)
+//			{
+//				mIsResizeColumnArmed = false;
+//				setCursor(Cursor.getDefaultCursor());
+//			}
+//		}
+//
+//
+//		@Override
+//		public void mouseDragged(MouseEvent aEvent)
+//		{
+//			if (mIsResizeColumn)
+//			{
+//				ListViewColumn column = mListView.getModel().getColumn(mResizeColumnIndex);
+//
+//				int w = Math.max(column.getWidth() + aEvent.getX() - mPoint.x, 0);
+//
+//				column.setWidth(w);
+//
+//				if (w > 0)
+//				{
+//					mPoint.x = aEvent.getX();
+//				}
+//
+//				repaint();
+//				mListView.validateLayout();
+//				mListView.repaint();
+//			}
+//		}
+//	}
+//
+//
+//	protected int columnAtPoint(Point aPoint)
+//	{
+//		ListViewModel model = mListView.getModel();
+//
+//		int x = mListView.getListViewLayout().getMarginLeft();
+//
+//		for (int i = 0; i < model.getColumnCount(); i++)
+//		{
+//			ListViewColumn column = model.getColumn(i);
+//
+//			if (!column.isVisible())
+//			{
+//				continue;
+//			}
+//
+//			int w = column.getWidth();
+//
+//			if (aPoint.x >= x && aPoint.x < x + w)
+//			{
+//				return i;
+//			}
+//
+//			x += w;
+//		}
+//
+//		return -1;
+//	}
 
 
 	private class TableCorner extends JPanel
