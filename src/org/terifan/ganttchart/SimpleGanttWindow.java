@@ -117,7 +117,7 @@ public class SimpleGanttWindow
 		mFrame.add(mPanel);
 		mFrame.setSize(1024, 768);
 		mFrame.setLocationRelativeTo(null);
-		mFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		mFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	}
 
 
