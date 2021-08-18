@@ -69,11 +69,11 @@ public class GanttChartDetailPanel extends JPanel
 
 			g.setColor(Color.BLACK);
 			g.setFont(mTimeFont);
-			g.drawString(formatTime(t1 - t0), mLabelWidth + x1 + 5, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
+			g.drawString(formatTime(t1 - t0), mLabelWidth + x1 + 5, y + mRowHeight/2 + g.getFontMetrics().getDescent());
 
 			g.setColor(Color.BLACK);
 			g.setFont(mLabelFont);
-			g.drawString(segment.getSegmentDescription(), 2, y + mRowHeight/2 + aGraphics.getFontMetrics().getDescent());
+			g.drawString(segment.getSegmentDescription(), 2, y + mRowHeight/2 + g.getFontMetrics().getDescent());
 
 			y += mRowHeight;
 		}

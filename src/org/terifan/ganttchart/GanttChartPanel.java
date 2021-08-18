@@ -15,7 +15,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -600,7 +599,7 @@ public class GanttChartPanel extends JPanel
 		}
 	};
 
-	
+
 //	private class MouseMotionListener extends MouseMotionAdapter
 //	{
 //		@Override
