@@ -27,8 +27,6 @@ import javax.swing.SwingUtilities;
 import static org.terifan.ganttchart.rev2.StyleSheet.BACKGROUND;
 import static org.terifan.ganttchart.rev2.StyleSheet.COLORS;
 import static org.terifan.ganttchart.rev2.StyleSheet.FOREGROUND;
-import static org.terifan.ganttchart.rev2.StyleSheet.LINE_COLOR;
-import static org.terifan.ganttchart.rev2.StyleSheet.LINE_COLOR_UNSELECTED;
 import static org.terifan.ganttchart.rev2.StyleSheet.SELECTION_COLOR;
 import static org.terifan.ganttchart.rev2.StyleSheet.SELECTION_OUTLINE_COLOR;
 import static org.terifan.ganttchart.rev2.StyleSheet.TEXT_COLOR_SELECTED;
@@ -41,10 +39,12 @@ import static org.terifan.ganttchart.rev2.StyleSheet.mIconSpinner;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconStatus;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
-import static org.terifan.ganttchart.rev2.StyleSheet.mSeparatorColor;
+import static org.terifan.ganttchart.rev2.StyleSheet.mSeparatorColor1;
 import static org.terifan.ganttchart.rev2.StyleSheet.mTreeIcons;
 import org.terifan.ganttchart.rev2.TextBox.Anchor;
 import org.terifan.ganttchart.rev2.Work.Status;
+import static org.terifan.ganttchart.rev2.StyleSheet.mSeparatorColor2;
+import static org.terifan.ganttchart.rev2.StyleSheet.DIVIDER_COLOR;
 
 
 public class WorkStatusPanel extends JPanel
@@ -77,7 +77,7 @@ public class WorkStatusPanel extends JPanel
 
 		mRightMarginWidth = 100;
 		mLabelWidth = 250;
-		mRowHeight = 20; //Math.max(16 + 3, new TextBox("jg[").setBounds(0, 0, 100, 100).measure().height + 3);
+		mRowHeight = 24; //Math.max(16 + 3, new TextBox("jg[").setBounds(0, 0, 100, 100).measure().height + 3);
 
 		super.addKeyListener(mKeyAdapter);
 		super.addMouseListener(mMouseAdapter);
@@ -416,7 +416,7 @@ public class WorkStatusPanel extends JPanel
 						}
 						else
 						{
-							g.setColor(LINE_COLOR);
+							g.setColor(DIVIDER_COLOR);
 							g.drawLine(mLabelWidth - 5, tb.getY(), mLabelWidth - 5, tb.getY() + mRowHeight);
 
 							tb.setX(textOffset + 2);
@@ -522,7 +522,7 @@ public class WorkStatusPanel extends JPanel
 							}
 						}
 
-						g.setColor(LINE_COLOR);
+						g.setColor(DIVIDER_COLOR);
 						g.drawLine(0, tb.getY() + mRowHeight - 1, pw, tb.getY() + mRowHeight - 1);
 					}
 
@@ -531,7 +531,9 @@ public class WorkStatusPanel extends JPanel
 					return AbortOption.CONTINUE;
 				});
 
-				g.setColor(mSeparatorColor);
+				g.setColor(mSeparatorColor1);
+				g.drawLine(0, tb.getY() - 2, pw, tb.getY() - 2);
+				g.setColor(mSeparatorColor2);
 				g.drawLine(0, tb.getY() - 1, pw, tb.getY() - 1);
 			}
 		}

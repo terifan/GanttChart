@@ -62,60 +62,89 @@ public class TestAllStates
 
 			try (Work w0 = model.start("test 1"))
 			{
+					Thread.sleep(rnd.nextInt(100));
 				try (Work w1 = w0.start("a"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					try (Work w2 = w1.start("b"))
 					{
+					Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+					Thread.sleep(rnd.nextInt(100));
+							w3.detail("details");
+					Thread.sleep(rnd.nextInt(100));
 							w3.success();
+					Thread.sleep(rnd.nextInt(100));
 						}
+					Thread.sleep(rnd.nextInt(100));
 					}
+					Thread.sleep(rnd.nextInt(100));
 				}
+					Thread.sleep(rnd.nextInt(100));
 			}
 
 			try (Work w0 = model.start("test 2"))
 			{
+					Thread.sleep(rnd.nextInt(100));
 				try (Work w1 = w0.start("a"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					try (Work w2 = w1.start("b"))
 					{
+					Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+					Thread.sleep(rnd.nextInt(100));
 							w3.fail();
 						}
+					Thread.sleep(rnd.nextInt(100));
 					}
+					Thread.sleep(rnd.nextInt(100));
 				}
+					Thread.sleep(rnd.nextInt(100));
 			}
 
 			try (Work w0 = model.start("test 3"))
 			{
+				Thread.sleep(rnd.nextInt(100));
 				try (Work w1 = w0.start("a"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					try (Work w2 = w1.start("b"))
 					{
+						Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+							Thread.sleep(rnd.nextInt(100));
 							w3.abort();
 						}
 					}
+					Thread.sleep(rnd.nextInt(100));
 				}
 			}
 
 			try (Work w0 = model.start("test 4"))
 			{
+				Thread.sleep(rnd.nextInt(100));
 				try (Work w1 = w0.start("a"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					try (Work w2 = w1.start("b"))
 					{
+						Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+							Thread.sleep(rnd.nextInt(100));
 							w3.abort();
 						}
+						Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+							Thread.sleep(rnd.nextInt(100));
 							w3.abort();
 						}
+						Thread.sleep(rnd.nextInt(100));
 						w2.fail();
 					}
 				}
@@ -123,36 +152,53 @@ public class TestAllStates
 
 			try (Work w0 = model.start("test 5"))
 			{
+					Thread.sleep(rnd.nextInt(100));
 				try (Work w1 = w0.start("a"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					try (Work w2 = w1.start("b"))
 					{
+					Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+							Thread.sleep(rnd.nextInt(100));
 							w3.abort();
 						}
+					Thread.sleep(rnd.nextInt(100));
 						try (Work w3 = w2.start("c"))
 						{
+							Thread.sleep(rnd.nextInt(100));
 							w3.success();
 						}
+					Thread.sleep(rnd.nextInt(100));
 					}
 				}
+					Thread.sleep(rnd.nextInt(100));
 			}
 
 			{
 				Work w0 = model.start("test 5");
+					Thread.sleep(rnd.nextInt(100));
 				Work w1 = w0.start("a");
+					Thread.sleep(rnd.nextInt(100));
 				Work w2 = w1.start("b");
+					Thread.sleep(rnd.nextInt(100));
 				try (Work w3 = w2.start("c"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					w3.abort();
 				}
+					Thread.sleep(rnd.nextInt(100));
 				try (Work w3 = w2.start("d"))
 				{
+					Thread.sleep(rnd.nextInt(100));
 					w3.finish();
 				}
+					Thread.sleep(rnd.nextInt(100));
 				Work w3 = w2.start("e");
+					Thread.sleep(rnd.nextInt(100));
 				PendingWork w4 = w2.pending("f");
+					Thread.sleep(rnd.nextInt(100));
 				PendingWork w5 = w2.pending("g");
 			}
 

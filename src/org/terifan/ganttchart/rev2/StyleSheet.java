@@ -20,7 +20,7 @@ public class StyleSheet
 	static Color FLOWLINE = new Color(96, 96, 101);
 	static Color LINE_COLOR_SELECTED = Color.WHITE;
 	static Color LINE_COLOR_UNSELECTED = new Color(86,86,95);
-	static Color LINE_COLOR = new Color(40, 40, 40);
+	static Color DIVIDER_COLOR = new Color(60, 60, 60);
 	static Color TEXT_COLOR_SELECTED = new Color(255, 255, 255);
 	static Color TEXT_COLOR_UNSELECTED = new Color(177, 177, 179);
 	static Color GRID_COLOR_0 = new Color(0.6f, 0.6f, 0.6f, 0.2f);
@@ -35,7 +35,8 @@ public class StyleSheet
 	};
 
 	static Color mGroupColor = new Color(255,0,0);
-	static Color mSeparatorColor = new Color(60,60,60);
+	static Color mSeparatorColor1 = Color.BLACK;
+	static Color mSeparatorColor2 = new Color(90,90,90);
 
 //	static Font LABEL_FONT = new Font("segoe ui", Font.PLAIN, 12);
 //	static Font TIME_FONT = new Font("segoe ui", Font.PLAIN, 9);
@@ -121,7 +122,7 @@ public class StyleSheet
 				};
 
 				mIconFinished = mIconSheet.getSubimage(24 * 1, 24 * 0, 16, 16);
-				mIconDetail = mIconSheet.getSubimage(24 * 4, 24 * 3, 16, 16);
+				mIconDetail = mIconSheet.getSubimage(24 * 3, 24 * 3, 16, 16);
 
 				mIconSpinner = mIconSheet.getSubimage(24 * 5, 24 * 5, 16, 16);
 
