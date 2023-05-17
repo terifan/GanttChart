@@ -1,13 +1,14 @@
 package org.terifan.ganttchart;
 
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import javax.swing.JPanel;
 import static org.terifan.ganttchart.GanttChartPanel.formatTime;
+import static org.terifan.ganttchart.StyleSheet.BACKGROUND;
+import static org.terifan.ganttchart.StyleSheet.ROW_DARK;
+import static org.terifan.ganttchart.StyleSheet.ROW_LIGHT;
 
 
 public class GanttChartDetailPanel extends JPanel
@@ -19,8 +20,6 @@ public class GanttChartDetailPanel extends JPanel
 	private int mRowHeight = 24;
 	private int mBarHeight = 9;
 	private int mRightMargin = 50;
-	private Font mLabelFont = new Font("segoe ui", Font.PLAIN, 12);
-	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
 
 
 	public void setSelectedElement(GanttElement aSelectedElement)
@@ -33,15 +32,13 @@ public class GanttChartDetailPanel extends JPanel
 	protected void paintComponent(Graphics aGraphics)
 	{
 		Graphics2D g = (Graphics2D)aGraphics;
-
 		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setColor(BACKGROUND);
+		g.fillRect(0, 0, getWidth(), getHeight());
 
 		int w = Math.max(getWidth(), mLabelWidth + mRightMargin + 50);
 		int h = getHeight();
-
-		g.setColor(Color.WHITE);
-		g.fillRect(0, 0, w, h);
 
 		if (mSelectedElement == null)
 		{
@@ -52,9 +49,8 @@ public class GanttChartDetailPanel extends JPanel
 		long endTime = mSelectedElement.getEndTime();
 
 		int wi = w - mLabelWidth - mRightMargin;
-		int y = 0;
 
-		for (int i = 0, sz = mSelectedElement.getSegmentCount(); i < sz; i++)
+		for (int i = 0, y = 0, sz = mSelectedElement.getSegmentCount(); i < sz; i++, y += mRowHeight)
 		{
 			GanttSegment segment = mSelectedElement.getSegment(i);
 
@@ -64,18 +60,19 @@ public class GanttChartDetailPanel extends JPanel
 			int x0 = (int)((t0 - startTime) * wi / (endTime - startTime));
 			int x1 = (int)((t1 - startTime) * wi / (endTime - startTime));
 
+			g.setColor((i & 1) == 0 ? ROW_LIGHT : ROW_DARK);
+			g.fillRect(0, y, w, mRowHeight);
+
 			g.setColor(segment.getColor());
 			g.fillRect(mLabelWidth + x0, y + (mRowHeight - mBarHeight) / 2, Math.max(1, x1 - x0), mBarHeight);
 
-			g.setColor(Color.BLACK);
-			g.setFont(mTimeFont);
-			g.drawString(formatTime(t1 - t0), mLabelWidth + x1 + 5, y + mRowHeight/2 + g.getFontMetrics().getDescent());
+			g.setColor(StyleSheet.FOREGROUND);
+			g.setFont(StyleSheet.TIME_FONT);
+			g.drawString(formatTime(t1 - t0), mLabelWidth + x1 + 5, y + mRowHeight / 2 + g.getFontMetrics().getDescent());
 
-			g.setColor(Color.BLACK);
-			g.setFont(mLabelFont);
-			g.drawString(segment.getSegmentDescription(), 2, y + mRowHeight/2 + g.getFontMetrics().getDescent());
-
-			y += mRowHeight;
+			g.setColor(StyleSheet.FOREGROUND);
+			g.setFont(StyleSheet.LABEL_FONT);
+			g.drawString(segment.getSegmentDescription(), 2, y + mRowHeight / 2 + g.getFontMetrics().getDescent());
 		}
 	}
 
