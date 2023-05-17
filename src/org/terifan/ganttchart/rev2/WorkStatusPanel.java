@@ -404,14 +404,14 @@ public class WorkStatusPanel extends JPanel
 						{
 							tb.setX(textOffset + 2);
 							tb.setWidth(pw - 10 - textOffset);
-							tb.setText(aWork.getLabel() + " -- " + aWork.getValue() + " " + aWork.getLocation());
+							tb.setText(aWork.getLabel() + " -- " + aWork.getValue());
 							tb.render(g);
 						}
 						else if (aWork.isDetail())
 						{
 							tb.setX(textOffset + 2);
 							tb.setWidth(pw - 10 - textOffset);
-							tb.setText(aWork.getLabel() + " " + aWork.getLocation());
+							tb.setText(aWork.getLabel());
 							tb.render(g);
 						}
 						else
@@ -421,7 +421,7 @@ public class WorkStatusPanel extends JPanel
 
 							tb.setX(textOffset + 2);
 							tb.setWidth(mLabelWidth - 10 - textOffset - 2);
-							tb.setText(aWork.getLabel() + " " + aWork.getLocation());
+							tb.setText(aWork.getLabel());
 							tb.render(g);
 
 							if (aWork.getStartTime() > 0)
