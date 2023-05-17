@@ -13,7 +13,7 @@ public class StyleSheet
 	static Color ROW_LIGHT = new Color(35, 35, 39);
 	static Color ROW_DARK = new Color(46, 46, 50);
 	static Color SELECTION_COLOR = new Color(32, 78, 138);
-	static Color FLOWLINE = new Color(56, 56, 61);
+	static Color FLOWLINE = new Color(96, 96, 101);
 	static Color LINE_COLOR_SELECTED = Color.WHITE;
 	static Color LINE_COLOR_UNSELECTED = new Color(156, 156, 161);
 	static Color TEXT_COLOR_SELECTED = new Color(255, 255, 255);
