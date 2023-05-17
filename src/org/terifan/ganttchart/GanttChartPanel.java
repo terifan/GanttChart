@@ -2,32 +2,35 @@ package org.terifan.ganttchart;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
-import java.awt.Toolkit;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
-import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JViewport;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
+import static org.terifan.ganttchart.StyleSheet.BACKGROUND;
+import static org.terifan.ganttchart.StyleSheet.FLOWLINE;
+import static org.terifan.ganttchart.StyleSheet.FOREGROUND;
+import static org.terifan.ganttchart.StyleSheet.GRID_COLOR_0;
+import static org.terifan.ganttchart.StyleSheet.GRID_COLOR_1;
+import static org.terifan.ganttchart.StyleSheet.ROW_DARK;
+import static org.terifan.ganttchart.StyleSheet.ROW_LIGHT;
+import static org.terifan.ganttchart.StyleSheet.LABEL_FONT;
+import static org.terifan.ganttchart.StyleSheet.TIME_FONT;
+import static org.terifan.ganttchart.StyleSheet.SELECTION_COLOR;
+import static org.terifan.ganttchart.StyleSheet.LINE_COLOR_SELECTED;
+import static org.terifan.ganttchart.StyleSheet.LINE_COLOR_UNSELECTED;
+import static org.terifan.ganttchart.StyleSheet.TEXT_COLOR_SELECTED;
+import static org.terifan.ganttchart.StyleSheet.TEXT_COLOR_UNSELECTED;
 
 
 public class GanttChartPanel extends JPanel
@@ -35,17 +38,13 @@ public class GanttChartPanel extends JPanel
 	private final static long serialVersionUID = 1L;
 	private final GanttChart mChart;
 
-	private final static Color ROW_LIGHT = new Color(255, 255, 255);
-	private final static Color ROW_DARK = new Color(242, 242, 242);
 	private final static int MINIMUM_WIDTH = 50;
 
 	private int mRowHeight = 24;
 	private int mBarHeight = 9;
 	private int mLabelWidth = 200;
 	private int mRightMargin = 50;
-	private Font mLabelFont = new Font("segoe ui", Font.PLAIN, 12);
-	private Font mTimeFont = new Font("segoe ui", Font.PLAIN, 9);
-	private Color mSelectionColor = new Color(0.0f, 0.3f, 0.6f);
+
 	private BasicStroke mDottedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]
 	{
 		1f
@@ -117,14 +116,6 @@ public class GanttChartPanel extends JPanel
 	{
 		mHideSubSegmentRanges = aHideSubSegmentRanges;
 		return this;
-	}
-
-
-	@Override
-	public void addNotify()
-	{
-		super.addNotify();
-		configureEnclosingScrollPane();
 	}
 
 
@@ -234,7 +225,7 @@ public class GanttChartPanel extends JPanel
 		int wi = w - mLabelWidth - mRightMargin;
 		int h = getHeight();
 
-		g.setColor(Color.WHITE);
+		g.setColor(BACKGROUND);
 		g.fillRect(0, 0, w, getHeight());
 
 		for (int i = 0, y = 0; y < h; i++, y += mRowHeight)
@@ -277,7 +268,7 @@ public class GanttChartPanel extends JPanel
 		});
 
 		Stroke oldStroke = aGraphics.getStroke();
-		aGraphics.setColor(new Color(220, 220, 220));
+		aGraphics.setColor(FLOWLINE);
 		aGraphics.setStroke(new BasicStroke(3f));
 
 		for (Entry<Object, ArrayList<GanttElement>> entry : startPoints.entrySet())
@@ -329,7 +320,7 @@ public class GanttChartPanel extends JPanel
 
 		if (mSelectedElement == aElement)
 		{
-			aGraphics.setColor(mSelectionColor);
+			aGraphics.setColor(SELECTION_COLOR);
 			aGraphics.fillRect(0, y, aWidth, mRowHeight);
 		}
 
@@ -376,10 +367,10 @@ public class GanttChartPanel extends JPanel
 				int x0 = mLabelWidth + (int)((range[0] - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 				int x1 = mLabelWidth + (int)((range[1] - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 
-				aGraphics.setColor(mSelectedElement == aElement ? mSelectionColor : (aRowIndex & 1) == 0 ? ROW_LIGHT : ROW_DARK);
+				aGraphics.setColor(mSelectedElement == aElement ? SELECTION_COLOR : (aRowIndex & 1) == 0 ? ROW_LIGHT : ROW_DARK);
 				aGraphics.fillRect(x0 + 1, y + (mRowHeight - mBarHeight) / 2, x1 - x0, mBarHeight + 1);
 
-				aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
+				aGraphics.setColor(mSelectedElement == aElement ? LINE_COLOR_SELECTED : LINE_COLOR_UNSELECTED);
 				aGraphics.drawLine(x0, y + (mRowHeight - mBarHeight) / 2, x1, y + (mRowHeight - mBarHeight) / 2);
 				aGraphics.drawLine(x0, y + (mRowHeight - mBarHeight) / 2 + mBarHeight, x1, y + (mRowHeight - mBarHeight) / 2 + mBarHeight);
 			}
@@ -388,8 +379,8 @@ public class GanttChartPanel extends JPanel
 
 		int x1 = mLabelWidth + (int)((endTime - aStartTime) * aContentWidth / (aEndTime - aStartTime));
 
-		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
-		aGraphics.setFont(mTimeFont);
+		aGraphics.setColor(mSelectedElement == aElement ? TEXT_COLOR_SELECTED : TEXT_COLOR_UNSELECTED);
+		aGraphics.setFont(TIME_FONT);
 		aGraphics.drawString(formatTime(endTime - startTime), x1 + 5, y + mRowHeight / 2 + aGraphics.getFontMetrics().getDescent() + 1);
 
 		drawElementLabel(aGraphics, aElement, aRowIndex, aTreePath);
@@ -405,8 +396,8 @@ public class GanttChartPanel extends JPanel
 		int y = aRowIndex * mRowHeight;
 		int ty = y + mRowHeight / 2;
 
-		aGraphics.setColor(mSelectedElement == aElement ? Color.WHITE : Color.BLACK);
-		aGraphics.setFont(mLabelFont);
+		aGraphics.setColor(mSelectedElement == aElement ? TEXT_COLOR_SELECTED : TEXT_COLOR_UNSELECTED);
+		aGraphics.setFont(LABEL_FONT);
 		aGraphics.drawString(aElement.getSegment(0).getDescription(), 2 + (aTreePath.length() - 1) * mIndent, ty + aGraphics.getFontMetrics().getDescent() + 1);
 
 		if (mIndent > 0)
@@ -459,10 +450,10 @@ public class GanttChartPanel extends JPanel
 
 		aGraphics.setStroke(aOldStroke);
 
-		aGraphics.setColor(Color.WHITE);
+		aGraphics.setColor(BACKGROUND);
 		aGraphics.fillRect(aX, aY + aRowHalfHeight - 4, 8, 8);
 
-		aGraphics.setColor(Color.BLACK);
+		aGraphics.setColor(FOREGROUND);
 		aGraphics.drawRect(aX, aY + aRowHalfHeight - 4, 8, 8);
 		aGraphics.drawLine(aX + 2, aY + aRowHalfHeight, aX + 6, aY + aRowHalfHeight);
 
@@ -500,8 +491,8 @@ public class GanttChartPanel extends JPanel
 
 	private void drawGrid(Graphics2D aGraphics, int aContentWidth, int aHeight)
 	{
-		Color c0 = new Color(0.6f, 0.6f, 0.6f, 0.2f);
-		Color c1 = new Color(0.8f, 0.8f, 0.8f, 0.2f);
+		Color c0 = GRID_COLOR_0;
+		Color c1 = GRID_COLOR_1;
 
 		for (int col = 0; col <= 10; col++)
 		{
@@ -516,269 +507,6 @@ public class GanttChartPanel extends JPanel
 				aGraphics.drawLine(x, 0, x, aHeight);
 			}
 		}
-	}
-
-
-	public void configureEnclosingScrollPane()
-	{
-		mIsConfigured = true;
-
-		JScrollPane scrollPane = getEnclosingScrollPane();
-
-		if (scrollPane != null)
-		{
-			JViewport viewport = scrollPane.getViewport();
-
-			if (viewport == null || viewport.getView() != this)
-			{
-				return;
-			}
-
-			scrollPane.setColumnHeaderView(new TableHeader());
-			scrollPane.setCorner(ScrollPaneConstants.UPPER_LEFT_CORNER, new TableCorner());
-			scrollPane.setCorner(ScrollPaneConstants.UPPER_RIGHT_CORNER, new TableCorner());
-			scrollPane.setBorder(null);
-		}
-	}
-
-
-	private class TableHeader extends JPanel
-	{
-		private BufferedImage mBackground;
-		private BufferedImage mSeparator;
-
-		private Cursor mCursorSplit;
-		private Cursor mCursorResize;
-
-
-		public TableHeader()
-		{
-			try
-			{
-				mBackground = ImageIO.read(GanttChartPanel.class.getResource("column_header_background_normal.png"));
-				mSeparator = ImageIO.read(GanttChartPanel.class.getResource("column_header_seperator_normal.png"));
-
-				mCursorSplit = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(GanttChartPanel.class.getResource("cursor_split.png")), new Point(16,16), "split");
-				mCursorResize = Toolkit.getDefaultToolkit().createCustomCursor(ImageIO.read(GanttChartPanel.class.getResource("cursor_resize.png")), new Point(16,16), "resize");
-			}
-			catch (Exception | Error e)
-			{
-			}
-		}
-
-
-		@Override
-		protected void paintComponent(Graphics aGraphics)
-		{
-			Graphics2D g = (Graphics2D)aGraphics;
-
-			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-			int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
-			int wi = w - mLabelWidth - mRightMargin;
-			int h = getHeight();
-
-			g.drawImage(mBackground, 0, 0, w, h, this);
-			g.setColor(new Color(220, 220, 220));
-			g.drawLine(0, h - 1, w, h - 1);
-
-			g.setColor(Color.BLACK);
-			g.drawString("Name", 5, h / 2 + aGraphics.getFontMetrics().getDescent() + 1);
-
-			for (int i = 0; i <= 5; i++)
-			{
-				g.drawImage(mSeparator, 200 + wi * i / 5, 0, 1, h, null);
-			}
-		}
-
-
-		@Override
-		public Dimension getPreferredSize()
-		{
-			return new Dimension(1, mRowHeight);
-		}
-	};
-
-	
-//	private class MouseMotionListener extends MouseMotionAdapter
-//	{
-//		@Override
-//		public void mouseMoved(MouseEvent aEvent)
-//		{
-//			int newIndex = columnAtPoint(aEvent.getPoint());
-//
-//			if (newIndex != -1 && newIndex != mRolloverColumnIndex)
-//			{
-//				mRolloverColumnIndex = newIndex;
-//				repaint();
-//			}
-//
-//			ListViewModel model = mListView.getModel();
-//
-//			int x = mListView.getListViewLayout().getMarginLeft();
-//
-//			int resizableColumnCount = model.getColumnCount();
-//
-//			if (mListView.getHeaderRenderer().getExtendLastItem())
-//			{
-//				resizableColumnCount--;
-//			}
-//
-//			for (int i = 0; i < resizableColumnCount; i++)
-//			{
-//				ListViewColumn column = model.getColumn(i);
-//
-//				if (!column.isVisible())
-//				{
-//					continue;
-//				}
-//
-//				int w = column.getWidth();
-//				x += w;
-//
-//				if (aEvent.getX() >= x - 5 && aEvent.getX() <= x + 5)
-//				{
-//					ListViewColumn nextColumn = null;
-//					int nextColumnIndex = 0;
-//
-//					for (int j = i + 1; j < model.getColumnCount(); j++)
-//					{
-//						ListViewColumn tmp = model.getColumn(j);
-//						if (tmp.isVisible())
-//						{
-//							nextColumn = tmp;
-//							nextColumnIndex = j;
-//							break;
-//						}
-//					}
-//
-//					if (nextColumn != null && nextColumn.getWidth() == 0 && aEvent.getX() > x)
-//					{
-//						mIsResizeColumnArmed = true;
-//						setCursor(mListView.getStyles().cursorSplit);
-//						mResizeColumnIndex = nextColumnIndex;
-//					}
-//					else if (nextColumn != null && nextColumn.getWidth() < 3 && aEvent.getX() > x)
-//					{
-//						mIsResizeColumnArmed = true;
-//						setCursor(mListView.getStyles().cursorResize);
-//						mResizeColumnIndex = nextColumnIndex;
-//					}
-//					else
-//					{
-//						mIsResizeColumnArmed = true;
-//						setCursor(mListView.getStyles().cursorResize);
-//						mResizeColumnIndex = i;
-//					}
-//
-//					return;
-//				}
-//			}
-//
-//			if (mIsResizeColumnArmed)
-//			{
-//				mIsResizeColumnArmed = false;
-//				setCursor(Cursor.getDefaultCursor());
-//			}
-//		}
-//
-//
-//		@Override
-//		public void mouseDragged(MouseEvent aEvent)
-//		{
-//			if (mIsResizeColumn)
-//			{
-//				ListViewColumn column = mListView.getModel().getColumn(mResizeColumnIndex);
-//
-//				int w = Math.max(column.getWidth() + aEvent.getX() - mPoint.x, 0);
-//
-//				column.setWidth(w);
-//
-//				if (w > 0)
-//				{
-//					mPoint.x = aEvent.getX();
-//				}
-//
-//				repaint();
-//				mListView.validateLayout();
-//				mListView.repaint();
-//			}
-//		}
-//	}
-//
-//
-//	protected int columnAtPoint(Point aPoint)
-//	{
-//		ListViewModel model = mListView.getModel();
-//
-//		int x = mListView.getListViewLayout().getMarginLeft();
-//
-//		for (int i = 0; i < model.getColumnCount(); i++)
-//		{
-//			ListViewColumn column = model.getColumn(i);
-//
-//			if (!column.isVisible())
-//			{
-//				continue;
-//			}
-//
-//			int w = column.getWidth();
-//
-//			if (aPoint.x >= x && aPoint.x < x + w)
-//			{
-//				return i;
-//			}
-//
-//			x += w;
-//		}
-//
-//		return -1;
-//	}
-
-
-	private class TableCorner extends JPanel
-	{
-		private BufferedImage mBackground;
-
-
-		public TableCorner()
-		{
-			try
-			{
-				mBackground = ImageIO.read(GanttChartPanel.class.getResource("column_header_background_normal.png"));
-			}
-			catch (Exception | Error e)
-			{
-			}
-		}
-
-
-		@Override
-		protected void paintComponent(Graphics aGraphics)
-		{
-			Graphics2D g = (Graphics2D)aGraphics;
-
-			int w = Math.max(getWidth(), mLabelWidth + mRightMargin + MINIMUM_WIDTH);
-			int h = getHeight();
-
-			aGraphics.drawImage(mBackground, 0, 0, w, h, this);
-			g.setColor(new Color(220, 220, 220));
-			g.drawLine(0, h - 1, w, h - 1);
-		}
-
-
-		@Override
-		public Dimension getPreferredSize()
-		{
-			return new Dimension(1, mRowHeight);
-		}
-	};
-
-
-	protected JScrollPane getEnclosingScrollPane()
-	{
-		return (JScrollPane)SwingUtilities.getAncestorOfClass(JScrollPane.class, this);
 	}
 
 
