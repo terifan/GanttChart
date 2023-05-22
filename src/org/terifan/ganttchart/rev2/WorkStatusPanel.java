@@ -18,6 +18,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.function.BiFunction;
 import javax.swing.ActionMap;
 import javax.swing.JPanel;
@@ -40,7 +41,6 @@ import static org.terifan.ganttchart.rev2.StyleSheet.mIconStatus;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.mSeparatorColor1;
-import static org.terifan.ganttchart.rev2.StyleSheet.mTreeIcons;
 import org.terifan.ganttchart.rev2.TextBox.Anchor;
 import org.terifan.ganttchart.rev2.Work.Status;
 import static org.terifan.ganttchart.rev2.StyleSheet.mSeparatorColor2;
@@ -52,13 +52,28 @@ public class WorkStatusPanel extends JPanel
 	private final static int TREE_ICON_SIZE = 16;
 
 	private int mLabelWidth;
-	private int mRowHeight;
+	private int mRowMinimumHeight;
 	private int mRightMarginWidth;
 
 	private WorkStatusModel mModel;
 	private Work mSelectedWork;
 	private WorkStatusPanelRepaintTimer mRepaintTimer;
+	private int mPanelHeight;
+	private HashMap<Integer, Info> mRowOffsets;
 
+	static class Info
+	{
+		int y;
+		int height;
+		Work work;
+
+		public Info(int aY, int aH, Work aWork)
+		{
+			this.y = aY;
+			this.height = aH;
+			this.work = aWork;
+		}
+	}
 
 	public WorkStatusPanel() throws IOException
 	{
@@ -66,18 +81,19 @@ public class WorkStatusPanel extends JPanel
 	}
 
 
-	public WorkStatusPanel(WorkStatusPanelRepaintTimer aPanelUpdater) throws IOException
+	public WorkStatusPanel(WorkStatusPanelRepaintTimer aRepaintTimer) throws IOException
 	{
-		mRepaintTimer = aPanelUpdater;
+		mRepaintTimer = aRepaintTimer;
 
 		mModel = new WorkStatusModel();
+		mRowOffsets = new HashMap<>();
 
 		super.setForeground(FOREGROUND);
 		super.setBackground(BACKGROUND);
 
 		mRightMarginWidth = 100;
 		mLabelWidth = 250;
-		mRowHeight = 24; //Math.max(16 + 3, new TextBox("jg[").setBounds(0, 0, 100, 100).measure().height + 3);
+		mRowMinimumHeight = 24; //Math.max(16 + 3, new TextBox("jg[").setBounds(0, 0, 100, 100).measure().height + 3);
 
 		super.addKeyListener(mKeyAdapter);
 		super.addMouseListener(mMouseAdapter);
@@ -102,18 +118,15 @@ public class WorkStatusPanel extends JPanel
 	{
 		if (mSelectedWork != null)
 		{
-			Mutable<Integer> row = new Mutable<>(0);
-			visit((aWork, aIndent) ->
+			for (Info info : mRowOffsets.values())
 			{
-				if (mSelectedWork.equals(aWork))
+				if (mSelectedWork.equals(info.work))
 				{
-					scrollRectToVisible(new Rectangle(0, row.value * mRowHeight, 100, mRowHeight));
+					scrollRectToVisible(new Rectangle(0, info.y, 100, info.height));
 					repaint();
-					return AbortOption.ABORT;
+					break;
 				}
-				row.value++;
-				return AbortOption.CONTINUE;
-			});
+			}
 		}
 	}
 
@@ -130,25 +143,16 @@ public class WorkStatusPanel extends JPanel
 		public void mousePressed(MouseEvent aEvent)
 		{
 			requestFocusInWindow();
-
-			Mutable<Integer> row = new Mutable<>(0);
-
-			visit((aWork, aIndent) ->
+			int my = aEvent.getY();
+			for (Info info : mRowOffsets.values())
 			{
-				if (row.value == -1)
+				if (my >= info.y && my < info.y + info.height)
 				{
-					return AbortOption.ABORT;
-				}
-				if (mSelectedWork != aWork && aEvent.getY() >= row.value * mRowHeight && aEvent.getY() < (row.value + 1) * mRowHeight)
-				{
-					mSelectedWork = aWork;
-					row.value = -1; // break outer loop
+					mSelectedWork = info.work;
 					repaint();
-					return AbortOption.ABORT;
+					break;
 				}
-				row.value++;
-				return AbortOption.CONTINUE;
-			});
+			}
 		}
 	};
 
@@ -199,38 +203,12 @@ public class WorkStatusPanel extends JPanel
 			{
 				case KeyEvent.VK_HOME:
 				case KeyEvent.VK_END:
-					mSelectedWork = up ? children.get(children.size() - 1) : children.get(0);
+					mSelectedWork = up ? mRowOffsets.get(0).work : mRowOffsets.get(mRowOffsets.size()-1).work;
 					scrollToSelectedRow();
 					break;
 				case KeyEvent.VK_PAGE_UP:
 				case KeyEvent.VK_PAGE_DOWN:
 				{
-					Mutable<Work> prev = new Mutable<>(null);
-					Mutable<Integer> targetWorkIndex = new Mutable<>(0);
-					for (int workIndex = children.size(); --workIndex >= 0;)
-					{
-						Mutable<Integer> _workIndex = new Mutable<>(0);
-						visit((aWork, aIndent) ->
-						{
-							if (up && sw != null && sw.equals(aWork))
-							{
-								targetWorkIndex.value = prev.value == null ? -1 : Math.min(children.size() - 1, _workIndex.value + 1);
-								return AbortOption.ABORT;
-							}
-							if (!up && prev.value != null && prev.value.equals(sw))
-							{
-								targetWorkIndex.value = Math.max(0, _workIndex.value - 1);
-								return AbortOption.ABORT;
-							}
-							prev.value = aWork;
-							return AbortOption.CONTINUE;
-						});
-					}
-					if (targetWorkIndex.value >= 0)
-					{
-						mSelectedWork = children.get(targetWorkIndex.value);
-						scrollToSelectedRow();
-					}
 					break;
 				}
 				case KeyEvent.VK_UP:
@@ -297,8 +275,8 @@ public class WorkStatusPanel extends JPanel
 		if (scrollPane != null)
 		{
 			JScrollBar vsb = scrollPane.getVerticalScrollBar();
-			vsb.setUnitIncrement(mRowHeight);
-			vsb.setBlockIncrement(10 * mRowHeight);
+			vsb.setUnitIncrement(mRowMinimumHeight);
+			vsb.setBlockIncrement(10 * mRowMinimumHeight);
 
 			scrollPane.setActionMap(new ActionMap());
 		}
@@ -308,7 +286,7 @@ public class WorkStatusPanel extends JPanel
 	@Override
 	protected void paintComponent(Graphics aGraphics)
 	{
-		TextBox tb = new TextBox().setAnchor(Anchor.WEST).setMaxLineCount(1).setHeight(mRowHeight).setBreakChars(new char[0]);
+		TextBox tb = new TextBox().setAnchor(Anchor.WEST).setMaxLineCount(10).setHeight(mRowMinimumHeight).setBreakChars(new char[0]);
 
 		int pw = Math.max(mLabelWidth + mRightMarginWidth + mRightMarginWidth, getWidth());
 		int ph = getHeight();
@@ -351,26 +329,71 @@ public class WorkStatusPanel extends JPanel
 
 				long timeRange = maxEndTime.value - minStartTime.value;
 				int barMaxWidth = pw - mLabelWidth - 10 - mRightMarginWidth;
+				HashMap<Integer,Info> rowOffsets = new HashMap<>();
 
 				work.visit((aWork, aIndent) ->
 				{
-					if (g.hitClip(0, tb.getY(), pw, tb.getY() + mRowHeight))
+					int rowHeight = mRowMinimumHeight;
+
+					Color rowColor = aWork.equals(mSelectedWork) ? SELECTION_COLOR : mRowColors[rowIndex.value & 1];
+					Color rowOutlineColor = aWork.equals(mSelectedWork) ? SELECTION_OUTLINE_COLOR : mRowOutlineColors[rowIndex.value & 1];
+
+					tb.setForeground(aWork.equals(mSelectedWork) ? TEXT_COLOR_SELECTED : super.getForeground());
+
+					int ix = 4;
+					int iy = tb.getY() + (mRowMinimumHeight - TREE_ICON_SIZE) / 2;
+
+					int textOffset = TREE_ICON_SIZE * aIndent.length() + 4;
+
+					if (aWork.getValue() != null && !aWork.getValue().isEmpty())
 					{
-						Color rowColor = aWork.equals(mSelectedWork) ? SELECTION_COLOR : mRowColors[rowIndex.value & 1];
-						Color rowOutlineColor = aWork.equals(mSelectedWork) ? SELECTION_OUTLINE_COLOR : mRowOutlineColors[rowIndex.value & 1];
+						tb.setWidth(pw - 10 - textOffset);
+						tb.setText(aWork.getLabel() + " -- " + aWork.getValue());
+					}
+					else if (aWork.isDetail())
+					{
+						tb.setWidth(pw - 10 - textOffset);
+						tb.setText(aWork.getLabel());
+					}
+					else
+					{
+						tb.setWidth(mLabelWidth - 10 - textOffset - 2);
+						tb.setText(aWork.getLabel());
+					}
 
-						tb.setForeground(aWork.equals(mSelectedWork) ? TEXT_COLOR_SELECTED : super.getForeground());
+					tb.setHeight(1000);
+					rowHeight = Math.max(tb.measure().height, mRowMinimumHeight);
+					tb.setHeight(rowHeight);
 
+					rowOffsets.put(rowIndex.value, new Info(tb.getY(),rowHeight,aWork));
+					rowIndex.value++;
+
+					if (g.hitClip(0, tb.getY(), pw, tb.getY() + rowHeight))
+					{
 						g.setColor(rowColor);
-						g.fillRect(0, tb.getY(), pw, mRowHeight);
-						rowIndex.value++;
+						g.fillRect(0, tb.getY(), pw, rowHeight);
 
-						int ix = 4;
-						int iy = tb.getY() + (mRowHeight - TREE_ICON_SIZE) / 2;
-
-						for (int i = 1; i < aIndent.length(); i++, ix += TREE_ICON_SIZE)
+						for (int i = 1, yy = tb.getY(), xx = ix + TREE_ICON_SIZE / 2 - 1; i < aIndent.length(); i++, ix += TREE_ICON_SIZE, xx += TREE_ICON_SIZE)
 						{
-							g.drawImage(mTreeIcons.get(aIndent.substring(i, i + 1)), ix, iy, null);
+							switch (aIndent.charAt(i))
+							{
+								case '|':
+									drawDottedLine(g, xx, yy, 0, rowHeight, new Color(128, 128, 128));
+									break;
+								case '+':
+									drawDottedLine(g, xx, yy, 0, rowHeight, new Color(128, 128, 128));
+									drawDottedLine(g, xx, yy + mRowMinimumHeight / 2, TREE_ICON_SIZE-2, 0, new Color(128, 128, 128));
+									break;
+								case 'o':
+									drawDottedLine(g, xx, yy, 0,  mRowMinimumHeight / 2, new Color(128, 128, 128));
+									drawDottedLine(g, xx, yy + mRowMinimumHeight / 2, TREE_ICON_SIZE-2, 0, new Color(128, 128, 128));
+									break;
+								case 'f':
+									drawDottedRect(g, xx - 2, yy + rowHeight / 2 - 2, 5, 5, null, new Color(128, 128, 128));
+									break;
+								case ' ':
+									break;
+							}
 						}
 
 						if (aWork.isDetail())
@@ -398,31 +421,13 @@ public class WorkStatusPanel extends JPanel
 							g.setTransform(tx);
 						}
 
-						int textOffset = ix + TREE_ICON_SIZE + 4;
+						tb.setX(textOffset + 2);
+						tb.render(g);
 
-						if (aWork.getValue() != null && !aWork.getValue().toString().isEmpty())
-						{
-							tb.setX(textOffset + 2);
-							tb.setWidth(pw - 10 - textOffset);
-							tb.setText(aWork.getLabel() + " -- " + aWork.getValue());
-							tb.render(g);
-						}
-						else if (aWork.isDetail())
-						{
-							tb.setX(textOffset + 2);
-							tb.setWidth(pw - 10 - textOffset);
-							tb.setText(aWork.getLabel());
-							tb.render(g);
-						}
-						else
+						if (!(aWork.getValue() != null && !aWork.getValue().isEmpty() || aWork.isDetail()))
 						{
 							g.setColor(DIVIDER_COLOR);
-							g.drawLine(mLabelWidth - 5, tb.getY(), mLabelWidth - 5, tb.getY() + mRowHeight);
-
-							tb.setX(textOffset + 2);
-							tb.setWidth(mLabelWidth - 10 - textOffset - 2);
-							tb.setText(aWork.getLabel());
-							tb.render(g);
+							g.drawLine(mLabelWidth - 5, tb.getY(), mLabelWidth - 5, tb.getY() + rowHeight);
 
 							if (aWork.getStartTime() > 0)
 							{
@@ -437,7 +442,7 @@ public class WorkStatusPanel extends JPanel
 									long selfTime = endTime - startTime;
 									boolean onlyDetails = true;
 
-									Work[] tmp = aWork.getChildren().toArray(new Work[0]);
+									Work[] tmp = aWork.getChildren().toArray(Work[]::new);
 
 									long midTime = 0;
 									for (Work w : tmp)
@@ -452,14 +457,14 @@ public class WorkStatusPanel extends JPanel
 									if (selfX0 != selfX2)
 									{
 										g.setColor(COLORS[aWork.getColor()]);
-										g.fillRect(selfX0, tb.getY() + mRowHeight / 2 - 4, selfX2 - selfX0, 9);
+										g.fillRect(selfX0, tb.getY() + mRowMinimumHeight / 2 - 4, selfX2 - selfX0, 9);
 									}
 
 									if (selfX1 > selfX2)
 									{
 										g.setColor(mGroupColor);
-										g.drawLine(selfX1, tb.getY() + mRowHeight / 2 - 1, selfX2, tb.getY() + mRowHeight / 2 - 1);
-										g.drawLine(selfX1, tb.getY() + mRowHeight / 2, selfX2, tb.getY() + mRowHeight / 2);
+										g.drawLine(selfX1, tb.getY() + mRowMinimumHeight / 2 - 1, selfX2, tb.getY() + mRowMinimumHeight / 2 - 1);
+										g.drawLine(selfX1, tb.getY() + mRowMinimumHeight / 2, selfX2, tb.getY() + mRowMinimumHeight / 2);
 									}
 
 									labelOffset = Math.max(labelOffset, Math.max(selfX0, Math.max(selfX0, selfX2)));
@@ -474,7 +479,7 @@ public class WorkStatusPanel extends JPanel
 											int childX0 = mLabelWidth + (int)(childStartTime * barMaxWidth / timeRange);
 											int childX1 = mLabelWidth + (int)(childEndTime * barMaxWidth / timeRange);
 
-											drawDottedRect(g, childX0, tb.getY() + mRowHeight / 2 - 4, childX1 - childX0, 9, rowColor, rowOutlineColor);
+											drawDottedRect(g, childX0, tb.getY() + mRowMinimumHeight / 2 - 4, childX1 - childX0, 9, rowColor, rowOutlineColor);
 
 											labelOffset = Math.max(labelOffset, Math.max(childX0, childX1));
 
@@ -497,11 +502,11 @@ public class WorkStatusPanel extends JPanel
 									int boxX1 = labelOffset;
 									int boxX2 = mLabelWidth + (int)((maxEndTime.value - minStartTime.value) * barMaxWidth / timeRange);
 
-									if (boxX2 > boxX1 && childrenMaxEndTime.value == maxEndTime.value)
+									if (boxX2 > boxX1 && childrenMaxEndTime.value.equals(maxEndTime.value))
 									{
 										g.setColor(mGroupColor);
-										g.drawLine(boxX1, tb.getY() + mRowHeight / 2 - 1, boxX2, tb.getY() + mRowHeight / 2 - 1);
-										g.drawLine(boxX1, tb.getY() + mRowHeight / 2, boxX2, tb.getY() + mRowHeight / 2);
+										g.drawLine(boxX1, tb.getY() + mRowMinimumHeight / 2 - 1, boxX2, tb.getY() + mRowMinimumHeight / 2 - 1);
+										g.drawLine(boxX1, tb.getY() + mRowMinimumHeight / 2, boxX2, tb.getY() + mRowMinimumHeight / 2);
 
 										labelOffset = boxX2;
 									}
@@ -515,7 +520,7 @@ public class WorkStatusPanel extends JPanel
 									int boxX0 = mLabelWidth + (int)(startTime * barMaxWidth / timeRange);
 									int boxX1 = mLabelWidth + (int)(endTime * barMaxWidth / timeRange);
 									g.setColor(COLORS[aWork.getColor()]);
-									g.fillRect(boxX0, tb.getY() + mRowHeight / 2 - 4, boxX1 - boxX0 + 1, 9);
+									g.fillRect(boxX0, tb.getY() + mRowMinimumHeight / 2 - 4, boxX1 - boxX0 + 1, 9);
 
 									tb.setX(boxX1 + 5).setWidth(pw - boxX1 - 5).setText(formatTime(endTime - startTime)).render(g);
 								}
@@ -523,13 +528,15 @@ public class WorkStatusPanel extends JPanel
 						}
 
 						g.setColor(DIVIDER_COLOR);
-						g.drawLine(0, tb.getY() + mRowHeight - 1, pw, tb.getY() + mRowHeight - 1);
+						g.drawLine(0, tb.getY() + rowHeight - 1, pw, tb.getY() + rowHeight - 1);
 					}
 
-					tb.translate(0, mRowHeight);
+					tb.translate(0, rowHeight);
 
 					return AbortOption.CONTINUE;
 				});
+
+				mRowOffsets = rowOffsets;
 
 				g.setColor(mSeparatorColor1);
 				g.drawLine(0, tb.getY() - 2, pw, tb.getY() - 2);
@@ -537,15 +544,20 @@ public class WorkStatusPanel extends JPanel
 				g.drawLine(0, tb.getY() - 1, pw, tb.getY() - 1);
 			}
 		}
+
+		mPanelHeight = tb.getY();
 	}
 
 
 	private void drawDottedRect(Graphics2D g, int aX, int aY, int aWidth, int aHeight, Color aRowColor, Color aLineColor)
 	{
-		g.setColor(aRowColor);
-		g.fillRect(aX, aY, aWidth, aHeight);
-		g.setColor(aLineColor);
+		if (aRowColor != null)
+		{
+			g.setColor(aRowColor);
+			g.fillRect(aX, aY, aWidth, aHeight);
+		}
 
+		g.setColor(aLineColor);
 		for (int x = 0, x1 = aX, y1 = aY + aHeight - 1; x < aWidth; x++, x1++)
 		{
 			drawDot(g, x1, aY);
@@ -555,6 +567,27 @@ public class WorkStatusPanel extends JPanel
 		{
 			drawDot(g, aX, y1);
 			drawDot(g, x1, y1);
+		}
+	}
+
+
+	private void drawDottedLine(Graphics2D g, int aX, int aY, int aWidth, int aHeight, Color aLineColor)
+	{
+		g.setColor(aLineColor);
+
+		if (aWidth > 0)
+		{
+			for (int x = 0, x1 = aX; x < aWidth; x++, x1++)
+			{
+				drawDot(g, x1, aY);
+			}
+		}
+		else if (aHeight > 0)
+		{
+			for (int y = 0, y1 = aY + y; y < aHeight; y++, y1++)
+			{
+				drawDot(g, aX, y1);
+			}
 		}
 	}
 
@@ -571,15 +604,20 @@ public class WorkStatusPanel extends JPanel
 	@Override
 	public Dimension getPreferredSize()
 	{
-		Mutable<Integer> count = new Mutable<>(0);
-
-		visit((aWork, aIndent) ->
+		if (mPanelHeight == 0)
 		{
-			count.value++;
-			return AbortOption.CONTINUE;
-		});
+			Mutable<Integer> count = new Mutable<>(0);
 
-		return new Dimension(0, mRowHeight * count.value);
+			visit((aWork, aIndent) ->
+			{
+				count.value++;
+				return AbortOption.CONTINUE;
+			});
+
+			mPanelHeight = mRowMinimumHeight * count.value;
+		}
+
+		return new Dimension(0, mPanelHeight);
 	}
 
 

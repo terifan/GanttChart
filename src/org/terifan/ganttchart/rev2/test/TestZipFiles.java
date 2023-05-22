@@ -146,7 +146,7 @@ public class TestZipFiles
 									}
 								}
 
-								w1.detail("Finished wiring " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100-zipEntry.getCompressedSize()*100/bytes.length)+"%");
+								w1.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100-zipEntry.getCompressedSize()*100/bytes.length)+"%");
 								w1.success();
 							}
 							catch (Exception e)

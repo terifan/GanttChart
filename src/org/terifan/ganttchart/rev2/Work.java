@@ -233,25 +233,38 @@ public class Work implements Externalizable, AutoCloseable
 
 	public Work detail(Object aValue)
 	{
-		String[] s = (aValue == null ? "" : formatException(aValue).toString()).split("\n");
+		String s = aValue == null ? "" : formatException(aValue).toString();
 
-		for (int i = 0;; i++)
+		try (Work work = add(new Work(s)))
 		{
-			try (Work work = add(new Work(s[i])))
+			work.mStartTime = System.currentTimeMillis();
+			if (work.mStatus == Status.PENDING)
 			{
-				work.mStartTime = System.currentTimeMillis();
-				if (work.mStatus == Status.PENDING)
-				{
-					work.mStatus = Status.RUNNING;
-				}
-				work.mDetail = true;
-
-				if (i + 1 == s.length)
-				{
-					return work;
-				}
+				work.mStatus = Status.RUNNING;
 			}
+			work.mDetail = true;
+
+			return work;
 		}
+
+//		String[] s = (aValue == null ? "" : formatException(aValue).toString()).split("\n");
+//
+//		{
+//			try (Work work = add(new Work(s[i])))
+//			{
+//				work.mStartTime = System.currentTimeMillis();
+//				if (work.mStatus == Status.PENDING)
+//				{
+//					work.mStatus = Status.RUNNING;
+//				}
+//				work.mDetail = true;
+//
+//				if (i + 1 == s.length)
+//				{
+//					return work;
+//				}
+//			}
+//		}
 	}
 
 

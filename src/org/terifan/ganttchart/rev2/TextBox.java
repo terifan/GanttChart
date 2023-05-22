@@ -1,45 +1,56 @@
 package org.terifan.ganttchart.rev2;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.font.LineMetrics;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+import javax.swing.text.Utilities;
 
 
-class TextBox
+
+public class TextBox implements Cloneable, Serializable
 {
+	private static final long serialVersionUID = 1L;
 	private final static Insets ZERO_INSETS = new Insets(0,0,0,0);
 	private static char[] DEFAULT_BREAK_CHARS = {' ', '.', ',', '-', '_', ':', ';', '?', '!'};
 
-	private final Insets mMargins;
-	private final Insets mPadding;
-	private final Rectangle mBounds;
-	private ArrayList<String> mTextLines;
-	private ArrayList<Rectangle> mTextBounds;
-	private List<String> mText;
-	private Font mFont;
-	private Color mForeground;
-	private Color mBackground;
-	private Color mHighlight;
-	private Border mBorder;
-	private Border mTextBorder;
-	private Anchor mAnchor;
-	private int mLineSpacing;
-	private int mMaxLineCount;
-	private char[] mBreakChars;
-	private int mMaxWidth;
-	private int mMinWidth;
-	private String mSuffix;
-	private boolean mDirty;
-	private Color mShadowColor;
+	protected final Insets mMargins;
+	protected final Insets mPadding;
+	protected final Rectangle mBounds;
+	protected ArrayList<TextSegment> mTextLines;
+	protected ArrayList<Rectangle> mTextBounds;
+	protected StringBuilder mText;
+	protected Font mFont;
+	protected Color mForeground;
+	protected Color mBackground;
+	protected Color mHighlight;
+	protected Border mBorder;
+	protected Border mTextBorder;
+	protected Anchor mAnchor;
+	protected int mLineSpacing;
+	protected int mMaxLineCount;
+	protected char[] mBreakChars;
+	protected int mMaxWidth;
+	protected int mMinWidth;
+	protected String mSuffix;
+	protected boolean mDirty;
+	protected Color mShadowColor;
+	protected Point mShadowOffset;
+	protected TextRenderCallback mRenderCallback;
+	private boolean mBackgroundImageSurroundText;
+	private boolean mMirrorShadow;
+	private Color mShadowMirrorColor;
 
 	enum Anchor
 	{
@@ -54,15 +65,15 @@ class TextBox
 		EAST;
 	}
 
-
-	TextBox()
+	public TextBox()
 	{
 		this("");
 	}
 
 
-	TextBox(String aText)
+	public TextBox(String aText)
 	{
+		mText = new StringBuilder(aText);
 		mBounds = new Rectangle();
 		mMargins = new Insets(0, 0, 0, 0);
 		mPadding = new Insets(0, 0, 0, 0);
@@ -70,25 +81,89 @@ class TextBox
 		mAnchor = Anchor.NORTH_WEST;
 		mFont = UIManager.getDefaults().getFont("TextField.font");
 		mBreakChars = DEFAULT_BREAK_CHARS;
-
-		setText(aText);
+		mDirty = true;
 	}
 
 
-	synchronized TextBox setText(String aText)
+	public synchronized String getText()
 	{
-		if (aText == null)
+		return mText.toString();
+	}
+
+
+	public synchronized TextBox setText(Object aText)
+	{
+		if (aText != null)
 		{
-			throw new IllegalArgumentException("aText is null");
+			mText.setLength(0);
+			mText.append(aText);
+			mDirty = true;
+		}
+		return this;
+	}
+
+
+	public synchronized TextBox append(Object aText)
+	{
+		if (aText != null)
+		{
+			mText.append(aText);
+			mDirty = true;
+		}
+		return this;
+	}
+
+
+	public synchronized TextBox appendLine(Object aText)
+	{
+		if (aText != null)
+		{
+			mText.append(aText).append("\n");
+			mDirty = true;
+		}
+		return this;
+	}
+
+
+	public TextRenderCallback getRenderCallback()
+	{
+		return mRenderCallback;
+	}
+
+
+	public TextBox setRenderCallback(TextRenderCallback aRenderCallback)
+	{
+		mRenderCallback = aRenderCallback;
+		return this;
+	}
+
+
+	public Font getFont()
+	{
+		return mFont;
+	}
+
+
+	public TextBox setFont(Font aFont)
+	{
+		if (aFont == null)
+		{
+			throw new IllegalArgumentException("aFont is null");
 		}
 
-		mText = Arrays.asList(aText.split("\n"));
+		mFont = aFont;
 		mDirty = true;
 		return this;
 	}
 
 
-	TextBox setForeground(Color aForeground)
+	public Color getForeground()
+	{
+		return mForeground;
+	}
+
+
+	public TextBox setForeground(Color aForeground)
 	{
 		if (aForeground == null)
 		{
@@ -100,7 +175,204 @@ class TextBox
 	}
 
 
-	TextBox setAnchor(Anchor aAnchor)
+	public Color getBackground()
+	{
+		return mBackground;
+	}
+
+
+	public TextBox setBackground(Color aBackground)
+	{
+		mBackground = aBackground;
+		return this;
+	}
+
+
+	public TextBox setBackgroundSurroundText(boolean aBackgroundSurroundText)
+	{
+		mBackgroundImageSurroundText = aBackgroundSurroundText;
+		return this;
+	}
+
+
+	public Color getHighlight()
+	{
+		return mHighlight;
+	}
+
+
+	public TextBox setHighlight(Color aHighlight)
+	{
+		mHighlight = aHighlight;
+		return this;
+	}
+
+
+	public Insets getMargins()
+	{
+		return mMargins;
+	}
+
+
+	public TextBox setMargins(Insets aMargins)
+	{
+		if (aMargins == null)
+		{
+			throw new IllegalArgumentException("aMargins is null");
+		}
+
+		return setMargins(aMargins.top, aMargins.left, aMargins.bottom, aMargins.right);
+	}
+
+
+	public TextBox setMargins(int aTop, int aLeft, int Bottom, int aRight)
+	{
+		mMargins.set(aTop, aLeft, Bottom, aRight);
+		mDirty = true;
+		return this;
+	}
+
+
+	public Insets getPadding()
+	{
+		return mPadding;
+	}
+
+
+	public TextBox setPadding(Insets aPadding)
+	{
+		if (aPadding == null)
+		{
+			throw new IllegalArgumentException("aPadding is null");
+		}
+
+		return setPadding(aPadding.top, aPadding.left, aPadding.bottom, aPadding.right);
+	}
+
+
+	public TextBox setPadding(int aTop, int aLeft, int Bottom, int aRight)
+	{
+		mPadding.set(aTop, aLeft, Bottom, aRight);
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setPaddingTop(int aTop)
+	{
+		mPadding.top = aTop;
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setPaddingLeft(int aLeft)
+	{
+		mPadding.left = aLeft;
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setPaddingBottom(int aBottom)
+	{
+		mPadding.bottom = aBottom;
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setPaddingRight(int aRight)
+	{
+		mPadding.right = aRight;
+		mDirty = true;
+		return this;
+	}
+
+
+	public Border getBorder()
+	{
+		return mBorder;
+	}
+
+
+	public TextBox setBorder(Border aBorder)
+	{
+		mBorder = aBorder;
+		mDirty = true;
+		return this;
+	}
+
+
+	public Border getTextBorder()
+	{
+		return mTextBorder;
+	}
+
+
+	public TextBox setTextBorder(Border aBorder)
+	{
+		mTextBorder = aBorder;
+		mDirty = true;
+		return this;
+	}
+
+
+	public Rectangle getBounds()
+	{
+		return mBounds;
+	}
+
+
+	public TextBox setBounds(Rectangle aBounds)
+	{
+		if (aBounds == null)
+		{
+			throw new IllegalArgumentException("aBounds is null");
+		}
+
+		mBounds.setBounds(aBounds);
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setBounds(int aOffsetX, int aOffsetY, int aWidth, int aHeight)
+	{
+		mBounds.setBounds(aOffsetX, aOffsetY, aWidth, aHeight);
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setDimensions(Dimension aDimension)
+	{
+		if (aDimension == null)
+		{
+			throw new IllegalArgumentException("aDimension is null");
+		}
+
+		mBounds.setSize(aDimension);
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setDimensions(int aWidth, int aHeight)
+	{
+		mBounds.setSize(aWidth, aHeight);
+		mDirty = true;
+		return this;
+	}
+
+
+	public Anchor getAnchor()
+	{
+		return mAnchor;
+	}
+
+
+	public TextBox setAnchor(Anchor aAnchor)
 	{
 		if (aAnchor == null)
 		{
@@ -113,7 +385,27 @@ class TextBox
 	}
 
 
-	TextBox setMaxLineCount(int aLineCount)
+	public int getLineSpacing()
+	{
+		return mLineSpacing;
+	}
+
+
+	public TextBox setLineSpacing(int aLineSpacing)
+	{
+		mLineSpacing = aLineSpacing;
+		mDirty = true;
+		return this;
+	}
+
+
+	public int getMaxLineCount()
+	{
+		return mMaxLineCount;
+	}
+
+
+	public TextBox setMaxLineCount(int aLineCount)
 	{
 		mMaxLineCount = aLineCount;
 		mDirty = true;
@@ -121,41 +413,79 @@ class TextBox
 	}
 
 
-	void translate(int aDeltaX, int aDeltaY)
+	public TextBox translate(int aDeltaX, int aDeltaY)
 	{
 		mBounds.translate(aDeltaX, aDeltaY);
 		mDirty = true;
+		return this;
 	}
 
 
-	TextBox setWidth(int aWidth)
+	public int getWidth()
+	{
+		return mBounds.width;
+	}
+
+
+	public TextBox setWidth(int aWidth)
 	{
 		mBounds.width = aWidth;
+		mDirty = true;
 		return this;
 	}
 
 
-	TextBox setHeight(int aHeight)
+	public int getHeight()
+	{
+		return mBounds.height;
+	}
+
+
+	public TextBox setHeight(int aHeight)
 	{
 		mBounds.height = aHeight;
+		mDirty = true;
 		return this;
 	}
 
 
-	TextBox setX(int aOffsetX)
+	public int getX()
+	{
+		return mBounds.x;
+	}
+
+
+	public TextBox setX(int aOffsetX)
 	{
 		mBounds.x = aOffsetX;
+		mDirty = true;
 		return this;
 	}
 
 
-	int getY()
+	public int getY()
 	{
 		return mBounds.y;
 	}
 
 
-	TextBox setBreakChars(char[] aBreakChars)
+	public TextBox setY(int aOffsetY)
+	{
+		mBounds.y = aOffsetY;
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox pack()
+	{
+		setBounds(measure());
+		mDirty = false;
+		return this;
+	}
+
+
+	public TextBox setBreakChars(char[] aBreakChars)
 	{
 		if (aBreakChars == null)
 		{
@@ -166,21 +496,33 @@ class TextBox
 	}
 
 
-	Rectangle measure()
+	public char[] getBreakChars()
+	{
+		return mBreakChars.clone();
+	}
+
+
+	public boolean isLayoutRequired()
+	{
+		return mDirty;
+	}
+
+
+	public Rectangle measure()
 	{
 		return measure(new FontRenderContext(null, true, false));
 	}
 
 
-	Rectangle measure(FontRenderContext aFontRenderContext)
+	public Rectangle measure(FontRenderContext aFontRenderContext)
 	{
 		if (aFontRenderContext == null)
 		{
 			return measure();
 		}
-		if (mBounds.isEmpty())
+//		if (mBounds.isEmpty())
 		{
-			mBounds.setBounds(0, 0, Short.MAX_VALUE, Short.MAX_VALUE);
+			mBounds.setSize(Short.MAX_VALUE, Short.MAX_VALUE);
 		}
 		if (mMaxWidth > 0)
 		{
@@ -230,41 +572,73 @@ class TextBox
 		bounds.width += mMargins.left + mMargins.right;
 		bounds.height += mMargins.top + mMargins.bottom;
 
+//		bounds.width += mPadding.left + mPadding.right;
+//		bounds.height += mPadding.top + mPadding.bottom;
+
 		return bounds;
 	}
 
 
-	TextBox render(Graphics aGraphics)
+	public TextBox updateBounds()
+	{
+		return updateBounds(new FontRenderContext(null, true, false));
+	}
+
+
+	public TextBox updateBounds(FontRenderContext aFontRenderContext)
+	{
+		Rectangle bounds = measure(aFontRenderContext);
+		setBounds(bounds);
+		return this;
+	}
+
+
+	public TextBox render(Graphics aGraphics)
 	{
 		return render(aGraphics, 0, 0);
 	}
 
 
-	TextBox render(Graphics aGraphics, int aTranslateX, int aTranslateY)
+	public TextBox render(Graphics aGraphics, boolean aAntialiase)
+	{
+		if (aAntialiase)
+		{
+			((Graphics2D)aGraphics).setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+		}
+
+		return render(aGraphics, 0, 0);
+	}
+
+
+	public TextBox render(Graphics aGraphics, int aTranslateX, int aTranslateY)
 	{
 		boolean hasShadow = mShadowColor != null;
 
 		if (mShadowColor != null)
 		{
-			renderImpl(aGraphics, aTranslateX - 1, aTranslateY + 1, hasShadow, true);
+			renderImpl(aGraphics, aTranslateX, aTranslateY, hasShadow, true);
 		}
+
 		return renderImpl(aGraphics, aTranslateX, aTranslateY, hasShadow, false);
 	}
 
 
-	private TextBox renderImpl(Graphics aGraphics, int aTranslateX, int aTranslateY, boolean aHasShadow, boolean aShadow)
+	protected TextBox renderImpl(Graphics aGraphics, int aTranslateX, int aTranslateY, boolean aHasShadow, boolean aShadow)
 	{
 		if (mDirty)
 		{
 			layout(aGraphics.getFontMetrics().getFontRenderContext());
 		}
 
+		Font oldFont = aGraphics.getFont();
+		Color oldColor = aGraphics.getColor();
+
 		aGraphics.translate(aTranslateX, aTranslateY);
 
-		int boxX = mBounds.x;
-		int boxY = mBounds.y;
-		int boxW = mBounds.width;
-		int boxH = mBounds.height;
+		int boxX = mBounds.x + mMargins.left;
+		int boxY = mBounds.y + mMargins.top;
+		int boxW = mBounds.width - mMargins.left - mMargins.right;
+		int boxH = mBounds.height - mMargins.top - mMargins.bottom;
 
 		if (mBorder != null)
 		{
@@ -302,6 +676,8 @@ class TextBox
 		}
 
 		aGraphics.translate(-aTranslateX, -aTranslateY);
+		aGraphics.setFont(oldFont);
+		aGraphics.setColor(oldColor);
 
 		return this;
 	}
@@ -309,6 +685,10 @@ class TextBox
 
 	private synchronized void layout(FontRenderContext aFontRenderContext)
 	{
+		if (mText == null)
+		{
+			throw new IllegalStateException("Text is null");
+		}
 		if (mMaxWidth > 0)
 		{
 			mBounds.width = Math.min(mBounds.width, mMaxWidth);
@@ -340,7 +720,7 @@ class TextBox
 			boxX += bi.left;
 			boxY += bi.top;
 			boxW -= bi.left + bi.right;
-			boxH -= bi.left + bi.bottom;
+			boxH -= bi.top + bi.bottom;
 		}
 
 		boxX += mMargins.left;
@@ -355,11 +735,11 @@ class TextBox
 			boxX += bi.left;
 			boxY += bi.top;
 			boxW -= bi.left + bi.right;
-			boxH -= bi.left + bi.bottom;
+			boxH -= bi.top + bi.bottom;
 			extraLineHeight = bi.top + bi.bottom;
 		}
 
-		LineMetrics lm = mFont.getLineMetrics("Adgj", aFontRenderContext);
+		LineMetrics lm = mFont.getLineMetrics("Adgjy", aFontRenderContext);
 		int lineHeight = (int)lm.getHeight() + mPadding.top + mPadding.bottom;
 
 		if (boxH < lineHeight)
@@ -389,10 +769,10 @@ class TextBox
 
 		for (int i = 0; i < lineCount; i++)
 		{
-			String str = mTextLines.get(i);
+			TextSegment str = mTextLines.get(i);
 
 			int lineX = boxX;
-			int lineW = getStringLength(aFontRenderContext, str, mFont) + mPadding.left + mPadding.right;
+			int lineW = getStringLength(aFontRenderContext, str.mText, mFont) + mPadding.left + mPadding.right;
 
 			switch (mAnchor)
 			{
@@ -419,7 +799,7 @@ class TextBox
 
 	private void layoutLines(FontRenderContext aFontRenderContext)
 	{
-		ArrayList<String> list = new ArrayList<>();
+		ArrayList<TextSegment> list = new ArrayList<>();
 
 		int boxW = mBounds.width - mMargins.left - mMargins.right;
 
@@ -437,11 +817,13 @@ class TextBox
 
 		if (boxW > 0)
 		{
-			for (String str : mText)
+			int line = 0;
+
+			for (String str : mText.toString().split("\n"))
 			{
 				do
 				{
-					boolean isLastLine = mMaxLineCount == 0 || list.size() >= mMaxLineCount - 1;
+					boolean isLastLine = mMaxLineCount > 0 && list.size() >= mMaxLineCount - 1;
 					int w = getStringLength(aFontRenderContext, str, mFont);
 					String nextLine;
 
@@ -484,7 +866,7 @@ class TextBox
 						str = "";
 					}
 
-					list.add(nextLine.trim());
+					list.add(new TextSegment(line, trim(nextLine)));
 
 					if (isLastLine)
 					{
@@ -497,10 +879,22 @@ class TextBox
 				{
 					break;
 				}
+
+				line++;
 			}
 		}
 
 		mTextLines = list;
+	}
+
+
+	private String trim(String aString)
+	{
+		int len = aString.length();
+		for (; len > 0 && Character.isWhitespace(aString.charAt(len - 1)); len--)
+		{
+		}
+		return len <= 0 ? "" : aString.substring(0, len);
 	}
 
 
@@ -535,7 +929,7 @@ class TextBox
 	}
 
 
-	private void drawSingleLine(Graphics aGraphics, String aText, LineMetrics aLineMetrics, int aOffsetX, int aOffsetY, int aWidth, int aHeight, boolean aHasShadow, boolean aShadow)
+	private void drawSingleLine(Graphics aGraphics, TextSegment aText, LineMetrics aLineMetrics, int aOffsetX, int aOffsetY, int aWidth, int aHeight, boolean aHasShadow, boolean aShadow)
 	{
 		if (mHighlight != null && (aShadow || !aHasShadow))
 		{
@@ -550,6 +944,195 @@ class TextBox
 
 		int adjust = (int)(aLineMetrics.getHeight() - aLineMetrics.getDescent());
 
-		aGraphics.drawString(aText, aOffsetX + mPadding.left, aOffsetY + adjust + mPadding.top);
+		int ix = aOffsetX + mPadding.left;
+		int iy = aOffsetY + adjust + mPadding.top;
+		if (aShadow)
+		{
+			ix += mShadowOffset.x;
+			iy += mShadowOffset.y;
+		}
+
+		if (mRenderCallback != null)
+		{
+			mRenderCallback.beforeRender(aText, aOffsetX, aOffsetY, aWidth, aHeight, ix, iy);
+		}
+
+		aGraphics.drawString(aText.mText, ix, iy);
+
+		if (aShadow && mMirrorShadow)
+		{
+			aGraphics.setColor(mShadowMirrorColor);
+			aGraphics.drawString(aText.mText, ix - 2 * mShadowOffset.x, iy);
+		}
+
+		if (mRenderCallback != null)
+		{
+			mRenderCallback.afterRender(aText, aOffsetX, aOffsetY, aWidth, aHeight, ix, iy);
+		}
+	}
+
+
+	public int getMinWidth()
+	{
+		return mMinWidth;
+	}
+
+
+	public TextBox setMinWidth(int aMinWidth)
+	{
+		mMinWidth = aMinWidth;
+		mDirty = true;
+		return this;
+	}
+
+
+	public int getMaxWidth()
+	{
+		return mMaxWidth;
+	}
+
+
+	public TextBox setMaxWidth(int aMaxWidth)
+	{
+		mMaxWidth = aMaxWidth;
+		mDirty = true;
+		return this;
+	}
+
+
+	public TextBox setShadow(Color aColor, int aX, int aY)
+	{
+		return setShadow(aColor, aX, aY, false);
+	}
+
+
+	public TextBox setShadow(Color aColor, int aX, int aY, boolean aMirrorShadow)
+	{
+		mShadowColor = aColor;
+		mShadowMirrorColor = aColor;
+		mShadowOffset = new Point(aX, aY);
+		mMirrorShadow = aMirrorShadow;
+		return this;
+	}
+
+
+	public TextBox setShadow(Color aColor, int aX, int aY, Color aMirrorColor)
+	{
+		mShadowColor = aColor;
+		mShadowOffset = new Point(aX, aY);
+		mMirrorShadow = aMirrorColor != null;
+		mShadowMirrorColor = aMirrorColor;
+		return this;
+	}
+
+
+	public Color getShadowColor()
+	{
+		return mShadowColor;
+	}
+
+
+	public String getSuffix()
+	{
+		return mSuffix;
+	}
+
+
+	public TextBox setSuffix(String aPrefix)
+	{
+		mSuffix = aPrefix;
+		mDirty = true;
+		return this;
+	}
+
+
+	public static class TextSegment implements Serializable
+	{
+		private static final long serialVersionUID = 1L;
+
+		private int mLine;
+		private String mText;
+
+		public TextSegment(int aLine, String aText)
+		{
+			mLine = aLine;
+			mText = aText;
+		}
+
+
+		public int getLine()
+		{
+			return mLine;
+		}
+
+
+		public String getText()
+		{
+			return mText;
+		}
+
+
+		@Override
+		public String toString()
+		{
+			return mText;
+		}
+	}
+
+
+	public static interface TextRenderCallback
+	{
+		public void beforeRender(TextSegment aText, int aOffsetX, int aOffsetY, int aWidth, int aHeight, int aTextX, int aTextY);
+
+		public void afterRender(TextSegment aText, int aOffsetX, int aOffsetY, int aWidth, int aHeight, int aTextX, int aTextY);
+	}
+
+
+	@Override
+	public String toString()
+	{
+		return getText();
+	}
+
+
+	@Override
+	public TextBox clone()
+	{
+		try
+		{
+			TextBox textBox = (TextBox)super.clone();
+			textBox.mAnchor = this.mAnchor;
+			textBox.mBackground = this.mBackground;
+			textBox.mBorder = this.mBorder;
+			textBox.mBounds.setBounds(this.mBounds);
+			textBox.mBreakChars = this.mBreakChars == DEFAULT_BREAK_CHARS ? DEFAULT_BREAK_CHARS : this.mBreakChars.clone();
+			textBox.mDirty = this.mDirty;
+			textBox.mFont = this.mFont;
+			textBox.mForeground = this.mForeground;
+			textBox.mHighlight = this.mHighlight;
+			textBox.mMaxLineCount = this.mMaxLineCount;
+			textBox.mLineSpacing = this.mLineSpacing;
+			textBox.mMargins.set(mMargins.top, mMargins.left, mMargins.bottom, mMargins.right);
+			textBox.mPadding.set(mPadding.top, mPadding.left, mPadding.bottom, mPadding.right);
+			textBox.mText = this.mText;
+			textBox.mTextBorder = this.mTextBorder;
+			textBox.mTextLines = this.mTextLines == null ? null : new ArrayList<>(this.mTextLines);
+			textBox.mMaxWidth = this.mMaxWidth;
+			textBox.mMinWidth = this.mMinWidth;
+			textBox.mSuffix = this.mSuffix;
+
+			return textBox;
+		}
+		catch (CloneNotSupportedException e)
+		{
+			throw new Error();
+		}
+	}
+
+
+	public static void enableAntialiasing(Graphics aGraphics)
+	{
+		Graphics2D g = (Graphics2D)aGraphics;
+		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 	}
 }

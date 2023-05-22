@@ -16,7 +16,7 @@ public class WorkStatusPanelRepaintTimer
 	public WorkStatusPanelRepaintTimer()
 	{
 		mPanels = new ArrayList<>();
-		mTimer = new Timer();
+		mTimer = new Timer(true);
 		mTimerTaskStarted = new AtomicBoolean();
 	}
 

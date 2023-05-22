@@ -91,7 +91,6 @@ public class StyleSheet
 		new Color(128, 128, 128)
 	};
 
-	static HashMap<String, BufferedImage> mTreeIcons;
 	static BufferedImage mIconSheet;
 	static BufferedImage mIconSpinner;
 	static BufferedImage mIconFinished;
@@ -102,8 +101,6 @@ public class StyleSheet
 
 	static
 	{
-		mTreeIcons = new HashMap<>();
-
 		if (mIconSheet == null)
 		{
 			try
@@ -128,12 +125,6 @@ public class StyleSheet
 
 				mAnimationSteps = 1;
 				mAnimationRate = 4;
-
-				mTreeIcons.put(" ", mIconSheet.getSubimage(24 * 0, 24 * 4, 16, 16));
-				mTreeIcons.put("o", mIconSheet.getSubimage(24 * 1, 24 * 4, 16, 16));
-				mTreeIcons.put("+", mIconSheet.getSubimage(24 * 2, 24 * 4, 16, 16));
-				mTreeIcons.put("f", mIconSheet.getSubimage(24 * 3, 24 * 4, 16, 16));
-				mTreeIcons.put("|", mIconSheet.getSubimage(24 * 4, 24 * 4, 16, 16));
 			}
 			catch (Exception e)
 			{
