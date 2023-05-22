@@ -52,7 +52,7 @@ public class WorkVisuals
 	public void layout()
 	{
 		ArrayList<LayoutInfo> layout = new ArrayList<>();
-		layout(mWork, layout, 0, "", true);
+		layout(mWork, layout, 0, "f", false);
 		mLayout = layout.toArray(LayoutInfo[]::new);
 	}
 
@@ -82,7 +82,7 @@ public class WorkVisuals
 		}
 
 		int rowHeight = Math.max(tb.measure().height, mSingeLineHeight);
-		LayoutInfo row = new LayoutInfo(aLayout.size(), aY, rowHeight, aWork, aIndent);
+		LayoutInfo row = new LayoutInfo(aLayout.size(), aY, rowHeight, aWork, aIndent + (aLastChild ? " " : "|"));
 		aLayout.add(row);
 
 		aY += rowHeight;
@@ -92,8 +92,8 @@ public class WorkVisuals
 			Work[] children = aWork.getChildren().toArray(Work[]::new);
 			for (int i = 0; i < children.length; i++)
 			{
-//				aLastChild ? " " : "|"
-				aY = layout(children[i], aLayout, aY, aIndent.isEmpty() ? "f" : aIndent + (i + 1 == children.length ? "o" : "+"), i + 1 == children.length);
+				aY = layout(children[i], aLayout, aY, aIndent + (i + 1 == children.length ? "o" : "+"), i + 1 == children.length);
+				aLastChild = false;
 			}
 		}
 
