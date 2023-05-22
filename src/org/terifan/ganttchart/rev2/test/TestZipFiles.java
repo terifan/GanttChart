@@ -51,16 +51,18 @@ public class TestZipFiles
 				{
 					try
 					{
-						ByteArrayOutputStream baos = new ByteArrayOutputStream();
-						try (ObjectOutputStream oos = new ObjectOutputStream(baos))
-						{
-							oos.writeObject(model);
-						}
+//						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//						try (ObjectOutputStream oos = new ObjectOutputStream(baos))
+//						{
+//							oos.writeObject(model);
+//						}
+//
+//						try (ObjectInputStream oos = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())))
+//						{
+//							panel.setModel((WorkStatusModel)oos.readObject());
+//						}
 
-						try (ObjectInputStream oos = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())))
-						{
-							panel.setModel((WorkStatusModel)oos.readObject());
-						}
+						panel.repaint();
 					}
 					catch (Exception e)
 					{
@@ -68,6 +70,8 @@ public class TestZipFiles
 					}
 				}
 			}, 250, 250);
+
+panel.setModel(model);
 
 			String src = "d:\\pictures";
 			String dst = "d:\\test.zip";

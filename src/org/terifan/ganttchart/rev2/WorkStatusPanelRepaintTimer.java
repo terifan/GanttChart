@@ -36,19 +36,19 @@ public class WorkStatusPanelRepaintTimer
 
 	void startRepaintTimer()
 	{
-		if (!mTimerTaskStarted.getAndSet(true))
-		{
-			mTimer.schedule(new RepaintTask(), 100, 100);
-		}
-
-		for (WorkStatusPanel panel : mPanels)
-		{
-			if (panel != null)
-			{
-				panel.invalidate();
-				panel.revalidate();
-			}
-		}
+//		if (!mTimerTaskStarted.getAndSet(true))
+//		{
+//			mTimer.schedule(new RepaintTask(), 100, 100);
+//		}
+//
+//		for (WorkStatusPanel panel : mPanels)
+//		{
+//			if (panel != null)
+//			{
+//				panel.invalidate();
+//				panel.revalidate();
+//			}
+//		}
 	}
 
 
@@ -63,7 +63,7 @@ public class WorkStatusPanelRepaintTimer
 			{
 				panel.repaint();
 
-				hasWork |= panel.hasWork();
+//				hasWork |= panel.hasWork();
 			}
 
 			if (!hasWork)

@@ -12,31 +12,31 @@ public class StyleSheet
 	static Font LABEL_FONT = new Font("segoe ui", Font.PLAIN, 12);
 	static Font TIME_FONT = new Font("segoe ui", Font.PLAIN, 9);
 	static Color BACKGROUND = new Color(20, 20, 20);
-	static Color EMPTY_BACKGROUND = new Color(25,25,29);
+	static Color EMPTY_BACKGROUND = new Color(25, 25, 29);
 	static Color FOREGROUND = new Color(177, 177, 179);
 	static Color SELECTION_COLOR = new Color(32, 78, 138);
-//	static Color SELECTION_COLOR = new Color(53, 59, 72);
-	static Color SELECTION_OUTLINE_COLOR = new Color(166,166,175);
+	static Color SELECTION_OUTLINE_COLOR = new Color(166, 166, 175);
 	static Color FLOWLINE = new Color(96, 96, 101);
 	static Color LINE_COLOR_SELECTED = Color.WHITE;
-	static Color LINE_COLOR_UNSELECTED = new Color(86,86,95);
+	static Color LINE_COLOR_UNSELECTED = new Color(86, 86, 95);
 	static Color DIVIDER_COLOR = new Color(60, 60, 60);
 	static Color TEXT_COLOR_SELECTED = new Color(255, 255, 255);
 	static Color TEXT_COLOR_UNSELECTED = new Color(177, 177, 179);
 	static Color GRID_COLOR_0 = new Color(0.6f, 0.6f, 0.6f, 0.2f);
 	static Color GRID_COLOR_1 = new Color(0.8f, 0.8f, 0.8f, 0.1f);
+	static Color TREE_COLOR = new Color(128, 128, 128);
 	static Color[] mRowColors = new Color[]
 	{
 		new Color(35, 35, 39), new Color(46, 46, 50)
 	};
 	static Color[] mRowOutlineColors = new Color[]
 	{
-		new Color(86,86,95), new Color(96,96,105)
+		new Color(86, 86, 95), new Color(96, 96, 105)
 	};
 
-	static Color mGroupColor = new Color(255,0,0);
+	static Color mGroupColor = new Color(255, 0, 0);
 	static Color mSeparatorColor1 = Color.BLACK;
-	static Color mSeparatorColor2 = new Color(90,90,90);
+	static Color mSeparatorColor2 = new Color(90, 90, 90);
 
 //	static Font LABEL_FONT = new Font("segoe ui", Font.PLAIN, 12);
 //	static Font TIME_FONT = new Font("segoe ui", Font.PLAIN, 9);
@@ -57,18 +57,16 @@ public class StyleSheet
 
 	static Color[] COLORS =
 	{
-		new Color(80,114,146),
-		new Color(255,179,210),
-		new Color(183,107,209),
-		new Color(179,87,38),
-		new Color(61,145,187),
-		new Color(95,158,71),
-
+		new Color(80, 114, 146),
+		new Color(255, 179, 210),
+		new Color(183, 107, 209),
+		new Color(179, 87, 38),
+		new Color(61, 145, 187),
+		new Color(95, 158, 71),
 		new Color(127, 159, 191),
 		new Color(86, 200, 63),
 		new Color(224, 132, 83),
 		new Color(164, 0, 15),
-
 		new Color(0, 150, 220),
 		new Color(230, 25, 75),
 		new Color(60, 180, 75),
@@ -98,6 +96,7 @@ public class StyleSheet
 	static BufferedImage[] mIconStatus;
 	static int mAnimationRate;
 	static int mAnimationSteps;
+
 
 	static
 	{

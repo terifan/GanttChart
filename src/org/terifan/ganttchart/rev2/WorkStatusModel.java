@@ -4,7 +4,6 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import org.terifan.ganttchart.rev2.WorkStatusPanel.AbortOption;
 
 
 public class WorkStatusModel implements Externalizable
@@ -86,12 +85,12 @@ public class WorkStatusModel implements Externalizable
 	}
 
 
-	public boolean hasWork()
-	{
-		Mutable<Boolean> state = new Mutable<>(false);
-		mWork.visit((aWork, aIndent) -> {state.value |= aWork.getEndTime() == 0; return state.value ? AbortOption.ABORT : AbortOption.CONTINUE;});
-		return state.value;
-	}
+//	public boolean hasWork()
+//	{
+//		Mutable<Boolean> state = new Mutable<>(false);
+//		mWork.visit((aWork, aIndent) -> {state.value |= aWork.getEndTime() == 0; return state.value ? AbortOption.ABORT : AbortOption.CONTINUE;});
+//		return state.value;
+//	}
 
 
 	@Override

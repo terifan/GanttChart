@@ -10,8 +10,6 @@ import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.function.Function;
-import java.util.function.BiFunction;
-import org.terifan.ganttchart.rev2.WorkStatusPanel.AbortOption;
 
 
 public class Work implements Externalizable, AutoCloseable
@@ -75,6 +73,12 @@ public class Work implements Externalizable, AutoCloseable
 
 		mStatus = Status.PENDING;
 		mLabel = nullToEmpty(formatException(aLabel));
+	}
+
+
+	public long getId()
+	{
+		return mId;
 	}
 
 
@@ -374,41 +378,41 @@ public class Work implements Externalizable, AutoCloseable
 	}
 
 
-	AbortOption visit(BiFunction<Work, String, AbortOption> aConsumer)
-	{
-		return visit(null, true, aConsumer);
-	}
-
-
-	private AbortOption visit(String aIndent, boolean aLastChild, BiFunction<Work, String, AbortOption> aConsumer)
-	{
-		if (aIndent != null)
-		{
-		}
-		else
-		{
-			aIndent = "";
-		}
-
-		if (aConsumer.apply(this, aIndent.isEmpty() ? "f" : aIndent + (aLastChild ? "o" : "+")) == AbortOption.ABORT)
-		{
-			return AbortOption.ABORT;
-		}
-
-		if (mChildren != null)
-		{
-			Work[] tmp = mChildren.toArray(Work[]::new);
-			for (int i = 0; i < tmp.length; i++)
-			{
-				if (tmp[i].visit(aIndent + (aLastChild ? " " : "|"), i == tmp.length - 1, aConsumer) == AbortOption.ABORT)
-				{
-					return AbortOption.ABORT;
-				}
-			}
-		}
-
-		return AbortOption.CONTINUE;
-	}
+//	AbortOption visit(BiFunction<Work, String, AbortOption> aConsumer)
+//	{
+//		return visit(null, true, aConsumer);
+//	}
+//
+//
+//	private AbortOption visit(String aIndent, boolean aLastChild, BiFunction<Work, String, AbortOption> aConsumer)
+//	{
+//		if (aIndent != null)
+//		{
+//		}
+//		else
+//		{
+//			aIndent = "";
+//		}
+//
+//		if (aConsumer.apply(this, aIndent.isEmpty() ? "f" : aIndent + (aLastChild ? "o" : "+")) == AbortOption.ABORT)
+//		{
+//			return AbortOption.ABORT;
+//		}
+//
+//		if (mChildren != null)
+//		{
+//			Work[] tmp = mChildren.toArray(Work[]::new);
+//			for (int i = 0; i < tmp.length; i++)
+//			{
+//				if (tmp[i].visit(aIndent + (aLastChild ? " " : "|"), i == tmp.length - 1, aConsumer) == AbortOption.ABORT)
+//				{
+//					return AbortOption.ABORT;
+//				}
+//			}
+//		}
+//
+//		return AbortOption.CONTINUE;
+//	}
 
 
 	public String toInfoString()
