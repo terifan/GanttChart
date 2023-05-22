@@ -52,7 +52,8 @@ public class WorkVisuals
 	public void layout()
 	{
 		ArrayList<LayoutInfo> layout = new ArrayList<>();
-		layout(mWork, layout, 0, "f", false);
+		int y = layoutRow(layout, mWork, 0, "");
+		layout(layout, mWork, y, "");
 		mLayout = layout.toArray(LayoutInfo[]::new);
 	}
 
@@ -64,40 +65,28 @@ public class WorkVisuals
 	}
 
 
-	private int layout(Work aWork, ArrayList<LayoutInfo> aLayout, int aY, String aIndent, boolean aLastChild)
+	private int layout(ArrayList<LayoutInfo> aLayout, Work aWork, int aY, String aIndent)
 	{
-		TextBox tb = new TextBox().setAnchor(Anchor.WEST).setMaxLineCount(10).setBreakChars(new char[0]).setHeight(1000);
-
-		if (aWork.getValue() != null && !aWork.getValue().isEmpty())
-		{
-			tb.setText(aWork.getLabel() + " -- " + aWork.getValue());
-		}
-		else if (aWork.isDetail())
-		{
-			tb.setText(aWork.getLabel());
-		}
-		else
-		{
-			tb.setText(aWork.getLabel());
-		}
-
-		int rowHeight = Math.max(tb.measure().height, mSingeLineHeight);
-		LayoutInfo row = new LayoutInfo(aLayout.size(), aY, rowHeight, aWork, aIndent + (aLastChild ? " " : "|"));
-		aLayout.add(row);
-
-		aY += rowHeight;
-
 		if (aWork.getChildren() != null)
 		{
 			Work[] children = aWork.getChildren().toArray(Work[]::new);
-			for (int i = 0; i < children.length; i++)
+
+			for (int i = 0, last = children.length - 1; i <= last; i++)
 			{
-				aY = layout(children[i], aLayout, aY, aIndent + (i + 1 == children.length ? "o" : "+"), i + 1 == children.length);
-				aLastChild = false;
+				aY = layoutRow(aLayout, children[i], aY, aIndent + (i == last ? "." : "+"));
+				aY = layout(aLayout, children[i], aY, aIndent + (i == last ? " " : "|"));
 			}
 		}
 
 		return aY;
+	}
+
+
+	private int layoutRow(ArrayList<LayoutInfo> aLayout, Work aWork, int aY, String aIndent)
+	{
+		int rowHeight = Math.max(new TextBox().setMaxLineCount(10).setBreakChars(new char[0]).setHeight(1000).setText(aWork.getLabel()).measure().height, mSingeLineHeight);
+		aLayout.add(new LayoutInfo(aLayout.size(), aY, rowHeight, aWork, aIndent));
+		return aY + rowHeight;
 	}
 
 
@@ -108,15 +97,13 @@ public class WorkVisuals
 		int pw = Math.max(mLabelWidth + mRightMarginWidth + mRightMarginWidth, aWidth);
 
 		long currentTime = System.currentTimeMillis();
+		long minStartTime = mWork.getStartTime();
+		long maxEndTime = getMaxEndTime(mWork);
 
-				long minStartTime = mWork.getStartTime();
-//				long minStartTime = getMinStartTime(work);
-				long maxEndTime = getMaxEndTime(mWork);
-
-				if (mWork.getEndTime() == 0)
-				{
-					maxEndTime = currentTime;
-				}
+		if (mWork.getEndTime() == 0)
+		{
+			maxEndTime = currentTime;
+		}
 
 		for (LayoutInfo row : mLayout)
 		{
@@ -134,54 +121,34 @@ public class WorkVisuals
 				Color rowOutlineColor = workId.equals(aSelectedWork) ? SELECTION_OUTLINE_COLOR : mRowOutlineColors[row.index & 1];
 				Color foreground = workId.equals(aSelectedWork) ? TEXT_COLOR_SELECTED : StyleSheet.FOREGROUND;
 
-				tb.setForeground(foreground);
-
-				int textOffset = TREE_ICON_SIZE * row.indent.length() + 4;
-
-				if (work.getValue() != null && !work.getValue().isEmpty())
-				{
-					tb.setWidth(pw - 10 - textOffset);
-					tb.setText(work.getLabel() + " -- " + work.getValue());
-				}
-				else if (work.isDetail())
-				{
-					tb.setWidth(pw - 10 - textOffset);
-					tb.setText(work.getLabel());
-				}
-				else
-				{
-					tb.setWidth(mLabelWidth - 10 - textOffset - 2);
-					tb.setText(work.getLabel());
-				}
-
-				tb.setHeight(row.height);
-
 				int ix = 4;
 				int iy = (mSingeLineHeight - TREE_ICON_SIZE) / 2;
+				int cy = mSingeLineHeight / 2;
 
 				g.setColor(rowColor);
 				g.fillRect(0, 0, pw, row.height);
 
-				for (int i = 1, yy = 0, xx = ix + TREE_ICON_SIZE / 2 - 1; i < row.indent.length(); i++, ix += TREE_ICON_SIZE, xx += TREE_ICON_SIZE)
+				ix += TREE_ICON_SIZE / 2 - 1;
+
+				for (int i = 0; i < row.indent.length(); i++, ix += TREE_ICON_SIZE)
 				{
 					switch (row.indent.charAt(i))
 					{
 						case '|':
-							drawDottedLine(g, xx, yy, 0, row.height, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, ix, 0, 0, row.height, StyleSheet.TREE_COLOR);
 							break;
 						case '+':
-							drawDottedLine(g, xx, yy, 0, row.height, StyleSheet.TREE_COLOR);
-							drawDottedLine(g, xx, yy + mSingeLineHeight / 2, TREE_ICON_SIZE - 2, 0, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, ix, 0, 0, row.height, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, ix, 0 + cy, TREE_ICON_SIZE - 2, 0, StyleSheet.TREE_COLOR);
 							break;
-						case 'o':
-							drawDottedLine(g, xx, yy, 0, mSingeLineHeight / 2, StyleSheet.TREE_COLOR);
-							drawDottedLine(g, xx, yy + mSingeLineHeight / 2, TREE_ICON_SIZE - 2, 0, StyleSheet.TREE_COLOR);
-							break;
-						case 'f':
-							drawDottedRect(g, xx - 2, yy + row.height / 2 - 2, 5, 5, null, StyleSheet.TREE_COLOR);
+						case '.':
+							drawDottedLine(g, ix, 0, 0, cy, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, ix, cy, TREE_ICON_SIZE - 2, 0, StyleSheet.TREE_COLOR);
 							break;
 					}
 				}
+
+				ix -= TREE_ICON_SIZE / 2 - 1;
 
 				if (work.isDetail())
 				{
@@ -189,7 +156,7 @@ public class WorkVisuals
 				}
 				else if (work.getStartTime() == 0)
 				{
-					g.drawImage(mIconStatus[Work.Status.PENDING.ordinal()], ix, iy, null);
+					g.drawImage(mIconStatus[Status.PENDING.ordinal()], ix, iy, null);
 				}
 				else if (work.getStatus() == Status.ABORTED || work.getStatus() == Status.FAILED || work.getStatus() == Status.SUCCESS || work.getStatus() == Status.FINISH)
 				{
@@ -208,7 +175,27 @@ public class WorkVisuals
 					g.setTransform(tx);
 				}
 
-				tb.setX(textOffset + 2);
+				ix += TREE_ICON_SIZE;
+
+				if (work.getValue() != null && !work.getValue().isEmpty())
+				{
+					tb.setWidth(pw - 10 - ix);
+					tb.setText(work.getLabel() + " -- " + work.getValue());
+				}
+				else if (work.isDetail())
+				{
+					tb.setWidth(pw - 10 - ix);
+					tb.setText(work.getLabel());
+				}
+				else
+				{
+					tb.setWidth(mLabelWidth - 10 - ix - 2);
+					tb.setText(work.getLabel());
+				}
+
+				tb.setForeground(foreground);
+				tb.setHeight(row.height);
+				tb.setX(ix + 2);
 				tb.render(g);
 
 				if (!(work.getValue() != null && !work.getValue().isEmpty() || work.isDetail()))
@@ -223,8 +210,6 @@ public class WorkVisuals
 
 						if (work.getChildren() != null && timeRange > 0)
 						{
-							int labelOffset = 0;
-
 							long selfTime = endTime - startTime;
 							boolean onlyDetails = true;
 
@@ -243,17 +228,17 @@ public class WorkVisuals
 							if (selfX0 != selfX2)
 							{
 								g.setColor(COLORS[work.getColor()]);
-								g.fillRect(selfX0, mSingeLineHeight / 2 - 4, selfX2 - selfX0, 9);
+								g.fillRect(selfX0, cy - 4, selfX2 - selfX0, 9);
 							}
 
 							if (selfX1 > selfX2)
 							{
 								g.setColor(mGroupColor);
-								g.drawLine(selfX1, mSingeLineHeight / 2 - 1, selfX2, mSingeLineHeight / 2 - 1);
-								g.drawLine(selfX1, mSingeLineHeight / 2, selfX2, mSingeLineHeight / 2);
+								g.drawLine(selfX1, cy - 1, selfX2, cy - 1);
+								g.drawLine(selfX1, cy, selfX2, cy);
 							}
 
-							labelOffset = Math.max(labelOffset, Math.max(selfX0, Math.max(selfX0, selfX2)));
+							int labelOffset = Math.max(0, Math.max(selfX0, Math.max(selfX0, selfX2)));
 
 							for (Work child : children)
 							{
@@ -265,7 +250,7 @@ public class WorkVisuals
 									int childX0 = mLabelWidth + (int)(childStartTime * barMaxWidth / timeRange);
 									int childX1 = mLabelWidth + (int)(childEndTime * barMaxWidth / timeRange);
 
-									drawDottedRect(g, childX0, mSingeLineHeight / 2 - 4, childX1 - childX0, 9, rowColor, rowOutlineColor);
+									drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, rowColor, rowOutlineColor);
 
 									labelOffset = Math.max(labelOffset, Math.max(childX0, childX1));
 
@@ -278,32 +263,38 @@ public class WorkVisuals
 								}
 							}
 
-							long childrenMaxEndTime = getMaxEndTime(work);
-
 							int boxX1 = labelOffset;
 							int boxX2 = mLabelWidth + (int)((maxEndTime - minStartTime) * barMaxWidth / timeRange);
 
-							if (boxX2 > boxX1 && childrenMaxEndTime == maxEndTime)
+							if (boxX2 > boxX1 && getMaxEndTime(work) == maxEndTime)
 							{
 								g.setColor(mGroupColor);
-								g.drawLine(boxX1, mSingeLineHeight / 2 - 1, boxX2, mSingeLineHeight / 2 - 1);
-								g.drawLine(boxX1, mSingeLineHeight / 2, boxX2, mSingeLineHeight / 2);
+								g.drawLine(boxX1, cy - 1, boxX2, cy - 1);
+								g.drawLine(boxX1, cy, boxX2, cy);
 
 								labelOffset = boxX2;
 							}
 
-							long totalTime = maxEndTime - work.getStartTime();
+							long durTime = maxEndTime - work.getStartTime();
+							String dur = formatTime(durTime);
+							String slf = formatTime(selfTime);
 
-							tb.setX(labelOffset + 5).setWidth(pw - labelOffset - 5).setText(onlyDetails ? formatTime(totalTime) : selfTime <= 0 ? "Σ" + formatTime(totalTime) : selfTime >= totalTime ? "Σ" + formatTime(selfTime) : "Ø" + formatTime(selfTime) + " / Σ" + formatTime(totalTime)).render(g);
+							tb.setX(labelOffset + 5);
+							tb.setWidth(pw - labelOffset - 5);
+							tb.setText(onlyDetails ? dur : selfTime <= 0 ? "Σ" + dur : selfTime >= durTime ? "Σ" + slf : "Ø" + slf + " / Σ" + dur);
+							tb.render(g);
 						}
 						else if (timeRange > 0)
 						{
 							int boxX0 = mLabelWidth + (int)(startTime * barMaxWidth / timeRange);
 							int boxX1 = mLabelWidth + (int)(endTime * barMaxWidth / timeRange);
-							g.setColor(COLORS[work.getColor()]);
-							g.fillRect(boxX0, mSingeLineHeight / 2 - 4, boxX1 - boxX0 + 1, 9);
 
-							tb.setX(boxX1 + 5).setWidth(pw - boxX1 - 5).setText(formatTime(endTime - startTime)).render(g);
+							g.setColor(COLORS[work.getColor()]);
+							g.fillRect(boxX0, cy - 4, boxX1 - boxX0 + 1, 9);
+
+							tb.setX(boxX1 + 5).setWidth(pw - boxX1 - 5);
+							tb.setText(formatTime(endTime - startTime));
+							tb.render(g);
 						}
 					}
 				}
