@@ -4,10 +4,9 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import org.terifan.ganttchart.rev2.TextBox.Anchor;
+import org.terifan.ganttchart.rev2.Work.Status;
 import static org.terifan.ganttchart.rev2.StyleSheet.COLORS;
-import static org.terifan.ganttchart.rev2.StyleSheet.SELECTION_COLOR;
-import static org.terifan.ganttchart.rev2.StyleSheet.SELECTION_OUTLINE_COLOR;
-import static org.terifan.ganttchart.rev2.StyleSheet.TEXT_COLOR_SELECTED;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationRate;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationSteps;
 import static org.terifan.ganttchart.rev2.StyleSheet.mGroupColor;
@@ -15,11 +14,17 @@ import static org.terifan.ganttchart.rev2.StyleSheet.mIconDetail;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconFinished;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconSpinner;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconStatus;
-import static org.terifan.ganttchart.rev2.StyleSheet.mRowColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
-import org.terifan.ganttchart.rev2.TextBox.Anchor;
-import org.terifan.ganttchart.rev2.Work.Status;
 import static org.terifan.ganttchart.rev2.StyleSheet.DIVIDER_COLOR;
+import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FONT;
+import static org.terifan.ganttchart.rev2.StyleSheet.TIME_COLOR;
+import static org.terifan.ganttchart.rev2.StyleSheet.TIME_FONT;
+import static org.terifan.ganttchart.rev2.StyleSheet.TREE_COLOR;
+import static org.terifan.ganttchart.rev2.StyleSheet.mRowBackgroundColors;
+import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND_SELECTED;
+import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND;
+import static org.terifan.ganttchart.rev2.StyleSheet.ROW_BACKGROUND_SELECTED;
+import static org.terifan.ganttchart.rev2.StyleSheet.ROW_OUTLINE_SELECTED;
 
 
 public class WorkVisuals
@@ -84,7 +89,7 @@ public class WorkVisuals
 
 	private int layoutRow(ArrayList<LayoutInfo> aLayout, Work aWork, int aY, String aIndent)
 	{
-		int rowHeight = Math.max(new TextBox().setMaxLineCount(10).setBreakChars(new char[0]).setHeight(1000).setText(aWork.getLabel()).measure().height, mSingeLineHeight);
+		int rowHeight = Math.max(new TextBox().setMaxLineCount(10).setBreakChars(new char[0]).setHeight(1000).setText(aWork.getLabel()).setFont(LABEL_FONT).measure().height, mSingeLineHeight);
 		aLayout.add(new LayoutInfo(aLayout.size(), aY, rowHeight, aWork, aIndent));
 		return aY + rowHeight;
 	}
@@ -98,12 +103,7 @@ public class WorkVisuals
 
 		long currentTime = System.currentTimeMillis();
 		long minStartTime = mWork.getStartTime();
-		long maxEndTime = getMaxEndTime(mWork);
-
-		if (mWork.getEndTime() == 0)
-		{
-			maxEndTime = currentTime;
-		}
+		long maxEndTime = mWork.getEndTime() == 0 ? currentTime : getMaxEndTime(mWork);
 
 		for (LayoutInfo row : mLayout)
 		{
@@ -116,34 +116,29 @@ public class WorkVisuals
 				long timeRange = maxEndTime - minStartTime;
 				int barMaxWidth = pw - mLabelWidth - 10 - mRightMarginWidth;
 
-				Long workId = work.getId();
-				Color rowColor = workId.equals(aSelectedWork) ? SELECTION_COLOR : mRowColors[row.index & 1];
-				Color rowOutlineColor = workId.equals(aSelectedWork) ? SELECTION_OUTLINE_COLOR : mRowOutlineColors[row.index & 1];
-				Color foreground = workId.equals(aSelectedWork) ? TEXT_COLOR_SELECTED : StyleSheet.FOREGROUND;
+				boolean selected = aSelectedWork != null && aSelectedWork.equals(work.getId());
 
-				int ix = 4;
+				int ix = 3 + TREE_ICON_SIZE / 2;
 				int iy = (mSingeLineHeight - TREE_ICON_SIZE) / 2;
 				int cy = mSingeLineHeight / 2;
 
-				g.setColor(rowColor);
+				g.setColor(selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1]);
 				g.fillRect(0, 0, pw, row.height);
-
-				ix += TREE_ICON_SIZE / 2 - 1;
 
 				for (int i = 0; i < row.indent.length(); i++, ix += TREE_ICON_SIZE)
 				{
 					switch (row.indent.charAt(i))
 					{
 						case '|':
-							drawDottedLine(g, ix, 0, 0, row.height, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, TREE_COLOR, ix, 0, 0, row.height);
 							break;
 						case '+':
-							drawDottedLine(g, ix, 0, 0, row.height, StyleSheet.TREE_COLOR);
-							drawDottedLine(g, ix, 0 + cy, TREE_ICON_SIZE - 2, 0, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, TREE_COLOR, ix, 0, 0, row.height);
+							drawDottedLine(g, TREE_COLOR, ix, cy, TREE_ICON_SIZE - 2, 0);
 							break;
 						case '.':
-							drawDottedLine(g, ix, 0, 0, cy, StyleSheet.TREE_COLOR);
-							drawDottedLine(g, ix, cy, TREE_ICON_SIZE - 2, 0, StyleSheet.TREE_COLOR);
+							drawDottedLine(g, TREE_COLOR, ix, 0, 0, cy);
+							drawDottedLine(g, TREE_COLOR, ix, cy, TREE_ICON_SIZE - 2, 0);
 							break;
 					}
 				}
@@ -193,9 +188,10 @@ public class WorkVisuals
 					tb.setText(work.getLabel());
 				}
 
-				tb.setForeground(foreground);
+				tb.setForeground(selected ? LABEL_FOREGROUND_SELECTED : LABEL_FOREGROUND);
 				tb.setHeight(row.height);
 				tb.setX(ix + 2);
+				tb.setFont(LABEL_FONT);
 				tb.render(g);
 
 				if (!(work.getValue() != null && !work.getValue().isEmpty() || work.isDetail()))
@@ -216,9 +212,9 @@ public class WorkVisuals
 							Work[] children = work.getChildren().toArray(Work[]::new);
 
 							long midTime = 0;
-							for (Work w : children)
+							for (Work child : children)
 							{
-								midTime = Math.max(midTime, Math.max(startTime, (w.getEndTime() == 0 ? maxEndTime : w.getEndTime()) - minStartTime));
+								midTime = Math.max(midTime, Math.max(startTime, (child.getEndTime() == 0 ? maxEndTime : child.getEndTime()) - minStartTime));
 							}
 
 							int selfX0 = mLabelWidth + (int)(startTime * barMaxWidth / timeRange);
@@ -230,7 +226,6 @@ public class WorkVisuals
 								g.setColor(COLORS[work.getColor()]);
 								g.fillRect(selfX0, cy - 4, selfX2 - selfX0, 9);
 							}
-
 							if (selfX1 > selfX2)
 							{
 								g.setColor(mGroupColor);
@@ -250,7 +245,7 @@ public class WorkVisuals
 									int childX0 = mLabelWidth + (int)(childStartTime * barMaxWidth / timeRange);
 									int childX1 = mLabelWidth + (int)(childEndTime * barMaxWidth / timeRange);
 
-									drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, rowColor, rowOutlineColor);
+									drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
 
 									labelOffset = Math.max(labelOffset, Math.max(childX0, childX1));
 
@@ -281,6 +276,8 @@ public class WorkVisuals
 
 							tb.setX(labelOffset + 5);
 							tb.setWidth(pw - labelOffset - 5);
+							tb.setForeground(TIME_COLOR);
+							tb.setFont(TIME_FONT);
 							tb.setText(onlyDetails ? dur : selfTime <= 0 ? "Σ" + dur : selfTime >= durTime ? "Σ" + slf : "Ø" + slf + " / Σ" + dur);
 							tb.render(g);
 						}
@@ -294,6 +291,8 @@ public class WorkVisuals
 
 							tb.setX(boxX1 + 5).setWidth(pw - boxX1 - 5);
 							tb.setText(formatTime(endTime - startTime));
+							tb.setForeground(TIME_COLOR);
+							tb.setFont(TIME_FONT);
 							tb.render(g);
 						}
 					}
@@ -330,7 +329,7 @@ public class WorkVisuals
 	}
 
 
-	private void drawDottedLine(Graphics2D g, int aX, int aY, int aWidth, int aHeight, Color aLineColor)
+	private void drawDottedLine(Graphics2D g, Color aLineColor, int aX, int aY, int aWidth, int aHeight)
 	{
 		g.setColor(aLineColor);
 

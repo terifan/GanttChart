@@ -135,6 +135,7 @@ panel.setModel(model);
 								ZipEntry zipEntry;
 								try (Work w2 = w1.start("Writing to zip"))
 								{
+									w2.setColor(3);
 									try
 									{
 										zipEntry = new ZipEntry(path.subpath(1, path.getNameCount()).toString());

@@ -20,7 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import static org.terifan.ganttchart.rev2.StyleSheet.BACKGROUND;
-import static org.terifan.ganttchart.rev2.StyleSheet.FOREGROUND;
+import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND;
 
 
 public class WorkStatusPanel extends JPanel
@@ -46,7 +46,7 @@ public class WorkStatusPanel extends JPanel
 		mModel = new WorkStatusModel();
 		mLayouts = new HashMap<>();
 
-		super.setForeground(FOREGROUND);
+		super.setForeground(LABEL_FOREGROUND);
 		super.setBackground(BACKGROUND);
 		super.addKeyListener(mKeyAdapter);
 		super.addMouseListener(mMouseAdapter);
@@ -218,7 +218,7 @@ public class WorkStatusPanel extends JPanel
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setColor(BACKGROUND);
 		g.fillRect(0, 0, w, h);
-		g.setColor(FOREGROUND);
+		g.setColor(LABEL_FOREGROUND);
 
 		ArrayList<Work> children = mModel.getWork().getChildren();
 		if (children != null)
