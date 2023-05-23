@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.swing.JFrame;
@@ -44,7 +45,8 @@ public class TestZipFiles
 
 			WorkStatusModel model = new WorkStatusModel();
 
-			new Timer().schedule(new TimerTask()
+			Timer timer = new Timer();
+			timer.schedule(new TimerTask()
 			{
 				@Override
 				public void run()
@@ -75,7 +77,7 @@ panel.setModel(model);
 
 			String src = "d:\\pictures";
 			String dst = "d:\\test.zip";
-			Mutable<Integer> limit = new Mutable<>(10);
+			Mutable<Integer> limit = new Mutable<>(4000);
 
 			try (Work w0 = model.start("creating zip"); ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dst)))
 			{
@@ -83,6 +85,26 @@ panel.setModel(model);
 
 				visit(Paths.get(src), zos, w0, limit);
 			}
+
+			timer.cancel();
+
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try (ObjectOutputStream oos = new ObjectOutputStream(baos))
+			{
+				model.writeExternal(oos);
+			}
+			Files.write(Paths.get("d:\\gantt.dat"), baos.toByteArray());
+
+			System.out.println("size: " + model.total());
+			System.out.println("serialized: " + baos.size());
+
+			baos = new ByteArrayOutputStream();
+			try (ObjectOutputStream oos = new ObjectOutputStream(new DeflaterOutputStream(baos)))
+			{
+				model.writeExternal(oos);
+			}
+
+			System.out.println("compressed: " + baos.size());
 		}
 		catch (Throwable e)
 		{
@@ -93,80 +115,75 @@ panel.setModel(model);
 
 	private static void visit(Path aPath, ZipOutputStream aZip, Work aWork, Mutable<Integer> aCounter) throws IOException
 	{
-		try (Work w0 = aWork.start(aPath.toString()))
+		List<Path> files = Files.list(aPath).toList();
+
+		for (Path path : files)
 		{
-			List<Path> files = Files.list(aPath).toList();
-
-			for (Path path : files)
+			if (aCounter.value <= 0)
 			{
-				try
+				return;
+			}
+
+			try
+			{
+				if (Files.isDirectory(path))
 				{
-					if (aCounter.value <= 0)
-					{
-						aWork.detail("Reached file limit, aborting...");
-						aWork.success();
-						return;
-					}
+					visit(path, aZip, aWork, aCounter);
+				}
+//				else if (Files.size(path) < 1000000)
+//				{
+//					aWork.start("Ignoring short file").abort();
+//				}
+				else
+				{
+					aCounter.value = aCounter.value - 1;
 
-					if (Files.isDirectory(path))
+					try (Work w0 = aWork.start("Adding file " + path.getFileName().toString()))
 					{
-						visit(path, aZip, w0, aCounter);
-					}
-					else if (Files.size(path) < 1000000)
-					{
-						w0.start("Ignoring short file").abort();
-					}
-					else
-					{
-						aCounter.value = aCounter.value - 1;
-
-						try (Work w1 = w0.start("Adding file " + path.getFileName().toString()))
+						try
 						{
-							try
+							byte[] bytes;
+							try (Work w1 = w0.start("Reading file"))
 							{
-								byte[] bytes;
-								try (Work w2 = w1.start("Reading file"))
-								{
-									bytes = Files.readAllBytes(path);
+								bytes = Files.readAllBytes(path);
 
-									if (rnd.nextInt(2) == 0) throw new EOFException();
-								}
-
-								ZipEntry zipEntry;
-								try (Work w2 = w1.start("Writing to zip"))
-								{
-									w2.setColor(3);
-									try
-									{
-										zipEntry = new ZipEntry(path.subpath(1, path.getNameCount()).toString());
-										aZip.putNextEntry(zipEntry);
-										aZip.write(bytes);
-										aZip.closeEntry();
-									}
-									catch (Exception e)
-									{
-										w2.detail(e);
-										w2.fail();
-										return;
-									}
-								}
-
-								w1.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100-zipEntry.getCompressedSize()*100/bytes.length)+"%");
-								w1.success();
+//								if (rnd.nextInt(2) == 0) throw new EOFException();
 							}
-							catch (Exception e)
+
+							ZipEntry zipEntry;
+							try (Work w1 = w0.start("Writing to zip"))
 							{
-								w1.detail(e);
-								w1.fail();
+								w1.setColor(3);
+								try
+								{
+									zipEntry = new ZipEntry(path.subpath(1, path.getNameCount()).toString());
+									aZip.putNextEntry(zipEntry);
+									aZip.write(bytes);
+									aZip.closeEntry();
+								}
+								catch (Exception e)
+								{
+									w1.detail(e);
+									w1.fail();
+									return;
+								}
 							}
+
+							w0.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100-zipEntry.getCompressedSize()*100/bytes.length)+"%");
+							w0.success();
+						}
+						catch (Exception e)
+						{
+							w0.detail(e);
+							w0.fail();
 						}
 					}
 				}
-				catch (Exception e)
-				{
-					e.printStackTrace(System.out);
-					w0.abort();
-				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace(System.out);
+				aWork.abort();
 			}
 		}
 	}

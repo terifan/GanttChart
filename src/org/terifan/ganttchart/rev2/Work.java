@@ -35,7 +35,8 @@ public class Work implements Externalizable, AutoCloseable
 	private String mLabel;
 	private String mValue;
 	private String mBody;
-	private String mLocation;
+	private String mSourceClass;
+	private String mSourceMethod;
 	private Status mStatus;
 	private long mStartTime;
 	private long mEndTime;
@@ -50,7 +51,8 @@ public class Work implements Externalizable, AutoCloseable
 		mBody = "";
 		mValue = "";
 		mStatus = Status.PENDING;
-		mLocation = "";
+		mSourceClass = "";
+		mSourceMethod = "";
 
 		StackTraceElement[] elements = new Throwable().getStackTrace();
 		for (int i = 0; i < elements.length; i++)
@@ -59,8 +61,8 @@ public class Work implements Externalizable, AutoCloseable
 			if (!stack.getClassName().equals(Work.class.getCanonicalName()))
 			{
 				String classPath = stack.getClassName();
-				String className = classPath.substring(classPath.lastIndexOf('.') + 1);
-				setLocation(className + "." + stack.getMethodName());
+				setSourceClass(classPath.substring(classPath.lastIndexOf('.') + 1));
+				setSourceMethod(stack.getMethodName());
 				break;
 			}
 		}
@@ -101,9 +103,29 @@ public class Work implements Externalizable, AutoCloseable
 	}
 
 
-	public String getLocation()
+	public String getSourceClass()
 	{
-		return mLocation;
+		return mSourceClass;
+	}
+
+
+	public Work setSourceClass(String aSourceClass)
+	{
+		mSourceClass = aSourceClass;
+		return this;
+	}
+
+
+	public String getSourceMethod()
+	{
+		return mSourceMethod;
+	}
+
+
+	public Work setSourceMethod(String aSourceMethod)
+	{
+		mSourceMethod = aSourceMethod;
+		return this;
 	}
 
 
@@ -250,25 +272,6 @@ public class Work implements Externalizable, AutoCloseable
 
 			return work;
 		}
-
-//		String[] s = (aValue == null ? "" : formatException(aValue).toString()).split("\n");
-//
-//		{
-//			try (Work work = add(new Work(s[i])))
-//			{
-//				work.mStartTime = System.currentTimeMillis();
-//				if (work.mStatus == Status.PENDING)
-//				{
-//					work.mStatus = Status.RUNNING;
-//				}
-//				work.mDetail = true;
-//
-//				if (i + 1 == s.length)
-//				{
-//					return work;
-//				}
-//			}
-//		}
 	}
 
 
@@ -322,13 +325,6 @@ public class Work implements Externalizable, AutoCloseable
 	}
 
 
-	public Work setLocation(String aLocation)
-	{
-		mLocation = aLocation;
-		return this;
-	}
-
-
 	synchronized Work add(Work aWork)
 	{
 		if (mChildren == null)
@@ -376,43 +372,6 @@ public class Work implements Externalizable, AutoCloseable
 		}
 		return mChildren.size();
 	}
-
-
-//	AbortOption visit(BiFunction<Work, String, AbortOption> aConsumer)
-//	{
-//		return visit(null, true, aConsumer);
-//	}
-//
-//
-//	private AbortOption visit(String aIndent, boolean aLastChild, BiFunction<Work, String, AbortOption> aConsumer)
-//	{
-//		if (aIndent != null)
-//		{
-//		}
-//		else
-//		{
-//			aIndent = "";
-//		}
-//
-//		if (aConsumer.apply(this, aIndent.isEmpty() ? "f" : aIndent + (aLastChild ? "o" : "+")) == AbortOption.ABORT)
-//		{
-//			return AbortOption.ABORT;
-//		}
-//
-//		if (mChildren != null)
-//		{
-//			Work[] tmp = mChildren.toArray(Work[]::new);
-//			for (int i = 0; i < tmp.length; i++)
-//			{
-//				if (tmp[i].visit(aIndent + (aLastChild ? " " : "|"), i == tmp.length - 1, aConsumer) == AbortOption.ABORT)
-//				{
-//					return AbortOption.ABORT;
-//				}
-//			}
-//		}
-//
-//		return AbortOption.CONTINUE;
-//	}
 
 
 	public String toInfoString()
@@ -495,7 +454,8 @@ public class Work implements Externalizable, AutoCloseable
 		aOut.writeLong(mEndTime);
 		aOut.writeUTF(mBody);
 		aOut.writeUTF(mValue);
-		aOut.writeUTF(mLocation);
+		aOut.writeUTF(mSourceClass);
+		aOut.writeUTF(mSourceMethod);
 		aOut.writeByte(mStatus.ordinal());
 		aOut.writeBoolean(mDetail);
 		aOut.writeByte(mColor);
@@ -520,7 +480,8 @@ public class Work implements Externalizable, AutoCloseable
 		mEndTime = aIn.readLong();
 		mBody = aIn.readUTF();
 		mValue = aIn.readUTF();
-		mLocation = aIn.readUTF();
+		mSourceClass = aIn.readUTF();
+		mSourceMethod = aIn.readUTF();
 		mStatus = Status.values()[aIn.readByte()];
 		mDetail = aIn.readBoolean();
 		mColor = aIn.readByte();
@@ -535,15 +496,6 @@ public class Work implements Externalizable, AutoCloseable
 				w.readExternal(aIn);
 				mChildren.add(w);
 			}
-		}
-	}
-
-
-	synchronized void cleanUp()
-	{
-		while (mChildren.size() > 1000)
-		{
-			mChildren.remove(mChildren.size() - 1);
 		}
 	}
 
@@ -587,6 +539,37 @@ public class Work implements Externalizable, AutoCloseable
 	}
 
 
+	long getMaxEndTime()
+	{
+		long endTime = 0;
+		if (getChildren() != null)
+		{
+			for (Work work : getChildren())
+			{
+				endTime = Math.max(endTime, work.getEndTime());
+			}
+		}
+		return endTime;
+	}
+
+
+	long getMinStartTime()
+	{
+		long startTime = Long.MAX_VALUE;
+		if (getChildren() != null)
+		{
+			for (Work work : getChildren())
+			{
+				if (work.getStartTime() > 0 && work.getStartTime() < startTime)
+				{
+					startTime = work.getStartTime();
+				}
+			}
+		}
+		return startTime;
+	}
+
+
 	public void print()
 	{
 		System.out.println("work:");
@@ -602,7 +585,7 @@ public class Work implements Externalizable, AutoCloseable
 		String cyan = "\033[0;36m";
 
 		String indent = cyan + "... ".repeat(aIndent) + reset;
-		System.out.println(indent + gray + "location: " + white + mLocation + reset);
+		System.out.println(indent + gray + "location: " + white + mSourceClass + "." + mSourceMethod + reset);
 		System.out.println(indent + gray + "status: " + white + mStatus + reset);
 		if (!mLabel.isEmpty())
 		{

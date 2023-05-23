@@ -15,7 +15,7 @@ public class StyleSheet
 	static Color LABEL_FOREGROUND_SELECTED = new Color(255, 255, 255);
 	static Color ROW_BACKGROUND_SELECTED = new Color(32, 78, 138);
 	static Color ROW_OUTLINE_SELECTED = new Color(166, 166, 175);
-	static Color DIVIDER_COLOR = new Color(60, 60, 60);
+	static Color DIVIDER_COLOR = new Color(56,56,61);
 	static Color TIME_COLOR = new Color(255, 255, 255);
 	static Color TREE_COLOR = new Color(128, 128, 128);
 

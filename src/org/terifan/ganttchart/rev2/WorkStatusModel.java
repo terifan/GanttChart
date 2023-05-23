@@ -29,8 +29,6 @@ public class WorkStatusModel implements Externalizable
 
 		Work work = mWork.start(stack.getMethodName() + ":" + className);
 
-		mWork.cleanUp();
-
 		if (mPanel != null)
 		{
 			mPanel.startRepaintTimer();
@@ -43,8 +41,6 @@ public class WorkStatusModel implements Externalizable
 	public Work start(Object aLabel)
 	{
 		Work work = mWork.start(aLabel);
-
-		mWork.cleanUp();
 
 		if (mPanel != null)
 		{
@@ -73,6 +69,26 @@ public class WorkStatusModel implements Externalizable
 	}
 
 
+	public synchronized int total()
+	{
+		return total(mWork);
+	}
+
+
+	public synchronized int total(Work aWork)
+	{
+		int sz = 1;
+		if (aWork.getChildren() != null)
+		{
+			for (Work w: aWork.getChildren())
+			{
+				sz += total(w);
+			}
+		}
+		return sz;
+	}
+
+
 	void setPanel(WorkStatusPanel aPanel)
 	{
 		mPanel = aPanel;
@@ -83,14 +99,6 @@ public class WorkStatusModel implements Externalizable
 	{
 		return mWork;
 	}
-
-
-//	public boolean hasWork()
-//	{
-//		Mutable<Boolean> state = new Mutable<>(false);
-//		mWork.visit((aWork, aIndent) -> {state.value |= aWork.getEndTime() == 0; return state.value ? AbortOption.ABORT : AbortOption.CONTINUE;});
-//		return state.value;
-//	}
 
 
 	@Override

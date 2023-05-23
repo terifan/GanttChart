@@ -103,7 +103,7 @@ public class WorkVisuals
 
 		long currentTime = System.currentTimeMillis();
 		long minStartTime = mWork.getStartTime();
-		long maxEndTime = mWork.getEndTime() == 0 ? currentTime : getMaxEndTime(mWork);
+		long maxEndTime = mWork.getEndTime() == 0 ? currentTime : mWork.getMaxEndTime();
 
 		for (LayoutInfo row : mLayout)
 		{
@@ -207,7 +207,6 @@ public class WorkVisuals
 						if (work.getChildren() != null && timeRange > 0)
 						{
 							long selfTime = endTime - startTime;
-							boolean onlyDetails = true;
 
 							Work[] children = work.getChildren().toArray(Work[]::new);
 
@@ -235,6 +234,7 @@ public class WorkVisuals
 
 							int labelOffset = Math.max(0, Math.max(selfX0, Math.max(selfX0, selfX2)));
 
+							boolean onlyDetails = true;
 							for (Work child : children)
 							{
 								if (child.getStartTime() > 0)
@@ -261,7 +261,7 @@ public class WorkVisuals
 							int boxX1 = labelOffset;
 							int boxX2 = mLabelWidth + (int)((maxEndTime - minStartTime) * barMaxWidth / timeRange);
 
-							if (boxX2 > boxX1 && getMaxEndTime(work) == maxEndTime)
+							if (boxX2 > boxX1 && work.getMaxEndTime() == maxEndTime)
 							{
 								g.setColor(mGroupColor);
 								g.drawLine(boxX1, cy - 1, boxX2, cy - 1);
@@ -297,9 +297,6 @@ public class WorkVisuals
 						}
 					}
 				}
-
-				g.setColor(DIVIDER_COLOR);
-				g.drawLine(0, row.height - 1, pw, row.height - 1);
 
 				g.translate(0, -row.y0);
 			}
@@ -356,44 +353,6 @@ public class WorkVisuals
 		{
 			aGraphics.drawLine(aX, aY, aX, aY);
 		}
-	}
-
-
-	private long getMaxEndTime(Work aWork)
-	{
-		long endTime = 0;
-		if (aWork.getChildren() != null)
-		{
-			for (Work work : aWork.getChildren())
-			{
-				endTime = Math.max(endTime, work.getEndTime());
-			}
-		}
-		return endTime;
-	}
-
-
-	private long getMinStartTime(Work aWork)
-	{
-		long startTime = Long.MAX_VALUE;
-		if (aWork.getChildren() != null)
-		{
-			for (Work work : aWork.getChildren())
-			{
-				if (work.getStartTime() > 0 && work.getStartTime() < startTime)
-				{
-					startTime = work.getStartTime();
-				}
-			}
-		}
-		return startTime;
-	}
-
-
-	public static enum AbortOption
-	{
-		ABORT,
-		CONTINUE
 	}
 
 
