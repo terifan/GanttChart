@@ -9,7 +9,6 @@ import org.terifan.ganttchart.rev2.Work.Status;
 import static org.terifan.ganttchart.rev2.StyleSheet.COLORS;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationRate;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationSteps;
-import static org.terifan.ganttchart.rev2.StyleSheet.mGroupColor;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconDetail;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconFinished;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconSpinner;

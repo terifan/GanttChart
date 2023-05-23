@@ -13,12 +13,12 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
-import org.terifan.ganttchart.rev2.Mutable;
 import org.terifan.ganttchart.rev2.PendingWork;
 import org.terifan.ganttchart.rev2.Work;
 import org.terifan.ganttchart.rev2.WorkStatusModel;
@@ -78,11 +78,11 @@ public class TestZipFiles
 
 			String src = "d:\\Pictures";
 			String dst = "d:\\test.zip";
-			Mutable<Integer> limit = new Mutable<>(100);
+			AtomicInteger limit = new AtomicInteger(100);
 
 			try (Work w0 = model.start("creating zip"); ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dst)))
 			{
-				w0.detail("Zip %s files from %s to %s", limit.value, src, dst);
+				w0.detail("Zip %s files from %s to %s", limit.get(), src, dst);
 
 				visit(Paths.get(src), zos, w0, limit);
 			}
@@ -116,7 +116,7 @@ public class TestZipFiles
 	}
 
 
-	private static void visit(Path aPath, ZipOutputStream aZip, Work aWork, Mutable<Integer> aCounter) throws IOException
+	private static void visit(Path aPath, ZipOutputStream aZip, Work aWork, AtomicInteger aCounter) throws IOException
 	{
 		try (Work w = aWork.start("Processing folder"))
 		{
@@ -131,9 +131,9 @@ public class TestZipFiles
 				{
 					visit(path, aZip, w, aCounter);
 				}
-				else if (aCounter.value > 0 && pending.size() < 10)
+				else if (aCounter.get() > 0 && pending.size() < 10)
 				{
-					aCounter.value = aCounter.value - 1;
+					aCounter.decrementAndGet();
 
 					pending.put(path, w.pending("Adding file " + path.getFileName().toString()));
 				}

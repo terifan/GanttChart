@@ -34,10 +34,6 @@ public class StyleSheet
 		new Color(86, 86, 95), new Color(96, 96, 105)
 	};
 
-	static Color mGroupColor = new Color(255, 0, 0);
-	static Color mSeparatorColor1 = Color.BLACK;
-	static Color mSeparatorColor2 = new Color(90, 90, 90);
-
 //	static Font LABEL_FONT = new Font("segoe ui", Font.PLAIN, 12);
 //	static Font TIME_FONT = new Font("segoe ui", Font.PLAIN, 9);
 //	static Color BACKGROUND = Color.WHITE;
