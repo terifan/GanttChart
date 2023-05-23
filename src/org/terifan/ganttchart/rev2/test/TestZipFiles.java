@@ -78,7 +78,7 @@ public class TestZipFiles
 
 			String src = "d:\\Pictures";
 			String dst = "d:\\test.zip";
-			AtomicInteger limit = new AtomicInteger(100);
+			AtomicInteger limit = new AtomicInteger(10000);
 
 			try (Work w0 = model.start("creating zip"); ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dst)))
 			{
@@ -131,7 +131,7 @@ public class TestZipFiles
 				{
 					visit(path, aZip, w, aCounter);
 				}
-				else if (aCounter.get() > 0 && pending.size() < 10)
+				else if (aCounter.get() > 0) // && pending.size() < 10)
 				{
 					aCounter.decrementAndGet();
 
