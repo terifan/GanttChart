@@ -220,32 +220,18 @@ public class WorkStatusPanel extends JPanel
 		g.fillRect(0, 0, w, h);
 		g.setColor(LABEL_FOREGROUND);
 
-		Work work = mModel.getWork();
+		ArrayList<Work> children = mModel.getWork();
+		for (int i = 0; i < children.size(); i++)
+		{
+			Work work = children.get(i);
 
-		WorkVisuals visuals = mLayouts.computeIfAbsent(work.getId(), id -> new WorkVisuals(work));
-		visuals.layout();
-		visuals.paint(g, w, mSelectedWork);
+			WorkVisuals visuals = mLayouts.computeIfAbsent(work.getId(), id -> new WorkVisuals(work));
 
-//		ArrayList<Work> children = mModel.getWork().getChildren();
-//		if (children != null)
-//		{
-//			for (int workIndex = children.size(); --workIndex >= 0;)
-//			{
-//				final Work work = children.get(workIndex);
-//
-//				WorkVisuals visuals = mLayouts.computeIfAbsent(work.getId(), id -> new WorkVisuals(work));
-//
-//				visuals.layout();
-//				visuals.paint(g, w, mSelectedWork);
-//
-//				g.translate(0, visuals.getLayoutHeight());
-//
-//				g.setColor(mSeparatorColor1);
-//				g.drawLine(0, tb.getY() - 2, pw, tb.getY() - 2);
-//				g.setColor(mSeparatorColor2);
-//				g.drawLine(0, tb.getY() - 1, pw, tb.getY() - 1);
-//			}
-//		}
+			visuals.layout();
+			visuals.paint(g, w, mSelectedWork);
+
+			g.translate(0, visuals.getLayoutHeight());
+		}
 	}
 
 

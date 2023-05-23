@@ -102,9 +102,8 @@ public class WorkVisuals
 		int pw = Math.max(mLabelWidth + mRightMarginWidth + mRightMarginWidth, aWidth);
 
 		long currentTime = System.currentTimeMillis();
-		long minStartTime = mWork.getStartTime();
-		long maxEndTime = mWork.getEndTime();
-		long timeRange = (maxEndTime == 0 ? currentTime : maxEndTime) - minStartTime;
+		long minStartTime = mWork.getMinStartTime();
+		long timeRange = (mWork.getEndTime() == 0 ? currentTime : mWork.getEndTime()) - minStartTime;
 
 		for (LayoutInfo row : mLayout)
 		{
@@ -216,16 +215,19 @@ public class WorkVisuals
 						{
 							for (Work child : work.getChildren())
 							{
-								long childStartTime = child.getStartTime();
-								long childEndTime = child.getEndTime() == 0 ? currentTime : child.getEndTime();
+								if (child.getStatus() != Status.PENDING)
+								{
+									long childStartTime = child.getStartTime();
+									long childEndTime = child.getEndTime() == 0 ? currentTime : child.getEndTime();
 
-								int childX0 = mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange);
-								int childX1 = mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange);
+									int childX0 = mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange);
+									int childX1 = mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange);
 
-								drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
+									drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
 
-								childTime += childEndTime - childStartTime;
-								onlyDetails &= child.isDetail();
+									childTime += childEndTime - childStartTime;
+									onlyDetails &= child.isDetail();
+								}
 							}
 						}
 

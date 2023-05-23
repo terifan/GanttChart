@@ -10,6 +10,7 @@ import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.function.Function;
+import static org.terifan.ganttchart.rev2.Work.Status.PENDING;
 
 
 public class Work implements Externalizable, AutoCloseable
@@ -73,7 +74,6 @@ public class Work implements Externalizable, AutoCloseable
 	{
 		this();
 
-		mStatus = Status.PENDING;
 		mLabel = nullToEmpty(formatException(aLabel));
 	}
 
@@ -555,14 +555,14 @@ public class Work implements Externalizable, AutoCloseable
 
 	long getMinStartTime()
 	{
-		long startTime = Long.MAX_VALUE;
+		long startTime = mStartTime;
 		if (getChildren() != null)
 		{
 			for (Work work : getChildren())
 			{
-				if (work.getStartTime() > 0 && work.getStartTime() < startTime)
+				if (startTime == 0 || work.getStartTime() > 0 && work.getStartTime() < startTime)
 				{
-					startTime = work.getStartTime();
+					startTime = work.getMinStartTime();
 				}
 			}
 		}

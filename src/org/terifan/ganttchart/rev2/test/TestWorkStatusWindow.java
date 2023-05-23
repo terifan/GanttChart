@@ -49,7 +49,7 @@ public class TestWorkStatusWindow
 						PendingWork[] subroutines = new PendingWork[10];
 						for (int i = 0; i < 10; i++)
 						{
-							routines[i] = item.pending("routine " + i);
+//							routines[i] = item.pending("routine " + i);
 							subroutines[i] = routines[i].pending("subroutine");
 						}
 						Thread.sleep(100);

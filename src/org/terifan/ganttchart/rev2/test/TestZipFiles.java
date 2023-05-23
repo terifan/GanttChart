@@ -129,96 +129,61 @@ public class TestZipFiles
 			{
 				if (Files.isDirectory(path))
 				{
-//					visit(path, aZip, w, aCounter);
+					visit(path, aZip, w, aCounter);
 				}
-				else
+				else if (aCounter.value > 0 && pending.size() < 10)
 				{
+					aCounter.value = aCounter.value - 1;
+
 					pending.put(path, w.pending("Adding file " + path.getFileName().toString()));
-					if (pending.size() > 10)
-					{
-						break;
-					}
 				}
 			}
 
 			for (Entry<Path, PendingWork> entry : pending.entrySet())
 			{
-				try
-				{
-					Thread.sleep(rnd.nextInt(50));
-				}
-				catch (Exception e)
-				{
-					e.printStackTrace(System.out);
-				}
+//				Thread.sleep(rnd.nextInt(50));
 
-				try
+				try (Work w0 = entry.getValue().start())
 				{
-					aCounter.value = aCounter.value - 1;
+//					Thread.sleep(rnd.nextInt(50));
 
-					try (Work w0 = entry.getValue().start())
+					try
 					{
-						try
+						byte[] bytes;
+						try (Work w1 = w0.start("Reading file"))
 						{
-							Thread.sleep(rnd.nextInt(50));
+							bytes = Files.readAllBytes(entry.getKey());
+//							if (rnd.nextInt(2) == 0) throw new EOFException();
+//							Thread.sleep(rnd.nextInt(1000));
 						}
-						catch (Exception e)
+
+						ZipEntry zipEntry;
+						try (Work w1 = w0.start("Writing to zip"))
 						{
-							e.printStackTrace(System.out);
-						}
-						try
-						{
-							byte[] bytes;
-							try (Work w1 = w0.start("Reading file"))
+							w1.setColor(3);
+							try
 							{
-								bytes = Files.readAllBytes(entry.getKey());
-
-//								if (rnd.nextInt(2) == 0) throw new EOFException();
-								try
-								{
-									Thread.sleep(rnd.nextInt(1000));
-								}
-								catch (Exception e)
-								{
-									e.printStackTrace(System.out);
-								}
+								zipEntry = new ZipEntry(entry.getKey().subpath(1, entry.getKey().getNameCount()).toString());
+								aZip.putNextEntry(zipEntry);
+								aZip.write(bytes);
+								aZip.closeEntry();
 							}
-
-							ZipEntry zipEntry;
-							try (Work w1 = w0.start("Writing to zip"))
+							catch (Exception e)
 							{
-								w1.setColor(3);
-								try
-								{
-									zipEntry = new ZipEntry(entry.getKey().subpath(1, entry.getKey().getNameCount()).toString());
-									aZip.putNextEntry(zipEntry);
-									aZip.write(bytes);
-									aZip.closeEntry();
-								}
-								catch (Exception e)
-								{
-									w1.detail(e);
-									w1.fail();
-									return;
-								}
-								try
-								{
-									Thread.sleep(rnd.nextInt(1000));
-								}
-								catch (Exception e)
-								{
-									e.printStackTrace(System.out);
-								}
+								w1.detail(e);
+								w1.fail();
+								return;
 							}
+//							Thread.sleep(rnd.nextInt(1000));
+						}
 
-							w0.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100 - zipEntry.getCompressedSize() * 100 / bytes.length) + "%");
-							w0.success();
-						}
-						catch (Exception e)
-						{
-							w0.detail(e);
-							w0.fail();
-						}
+						w0.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100 - zipEntry.getCompressedSize() * 100 / bytes.length) + "%");
+						w0.success();
+					}
+					catch (Exception e)
+					{
+						w0.detail(e);
+						w0.fail();
 					}
 				}
 				catch (Exception e)

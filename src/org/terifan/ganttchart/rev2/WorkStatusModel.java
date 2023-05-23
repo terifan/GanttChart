@@ -4,20 +4,21 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 
 
 public class WorkStatusModel implements Externalizable
 {
 	private final static long serialVersionUID = 1L;
 
-	private Work mWork;
+	private Work mRoot;
 
 	private transient WorkStatusPanel mPanel;
 
 
 	public WorkStatusModel()
 	{
-		mWork = new Work("root");
+		mRoot = new Work("root");
 	}
 
 
@@ -27,7 +28,12 @@ public class WorkStatusModel implements Externalizable
 		String classPath = stack.getClassName();
 		String className = classPath.substring(classPath.lastIndexOf('.') + 1);
 
-		Work work = mWork.start(stack.getMethodName() + ":" + className);
+		if (mRoot.getStartTime() == 0)
+		{
+			mRoot.startSelf();
+		}
+
+		Work work = mRoot.start(stack.getMethodName() + ":" + className);
 
 		if (mPanel != null)
 		{
@@ -40,7 +46,12 @@ public class WorkStatusModel implements Externalizable
 
 	public Work start(Object aLabel)
 	{
-		Work work = mWork.start(aLabel);
+		if (mRoot.getStartTime() == 0)
+		{
+			mRoot.startSelf();
+		}
+
+		Work work = mRoot.start(aLabel);
 
 		if (mPanel != null)
 		{
@@ -53,7 +64,7 @@ public class WorkStatusModel implements Externalizable
 
 	public Work detail(Object aLabel)
 	{
-		return mWork.detail(aLabel);
+		return mRoot.detail(aLabel);
 	}
 
 
@@ -65,13 +76,13 @@ public class WorkStatusModel implements Externalizable
 
 	public synchronized int size()
 	{
-		return mWork.size();
+		return mRoot.size();
 	}
 
 
 	public synchronized int total()
 	{
-		return total(mWork);
+		return total(mRoot);
 	}
 
 
@@ -95,22 +106,22 @@ public class WorkStatusModel implements Externalizable
 	}
 
 
-	Work getWork()
+	ArrayList<Work> getWork()
 	{
-		return mWork;
+		return mRoot.getChildren();
 	}
 
 
 	@Override
 	public synchronized void writeExternal(ObjectOutput aOut) throws IOException
 	{
-		aOut.writeObject(mWork);
+		aOut.writeObject(mRoot);
 	}
 
 
 	@Override
 	public synchronized void readExternal(ObjectInput aIn) throws IOException, ClassNotFoundException
 	{
-		mWork = (Work)aIn.readObject();
+		mRoot = (Work)aIn.readObject();
 	}
 }
