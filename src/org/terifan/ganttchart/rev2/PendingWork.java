@@ -14,7 +14,7 @@ public class PendingWork implements AutoCloseable
 
 	public Work start()
 	{
-		return mWork.startImpl();
+		return mWork.startSelf();
 	}
 
 

@@ -199,7 +199,7 @@ public class Work implements Externalizable, AutoCloseable
 	}
 
 
-	Work startImpl()
+	Work startSelf()
 	{
 		mStartTime = System.currentTimeMillis();
 		if (mStatus == Status.PENDING)
@@ -629,4 +629,15 @@ public class Work implements Externalizable, AutoCloseable
 	{
 		return aObject == null ? "" : aObject.toString();
 	}
+
+
+//	public void nextPending()
+//	{
+//		for (Work work : mChildren)
+//		{
+//			if (work instanceof PendingWork)
+//			{
+//			}
+//		}
+//	}
 }

@@ -103,7 +103,8 @@ public class WorkVisuals
 
 		long currentTime = System.currentTimeMillis();
 		long minStartTime = mWork.getStartTime();
-		long maxEndTime = mWork.getEndTime() == 0 ? currentTime : mWork.getMaxEndTime();
+		long maxEndTime = mWork.getEndTime();
+		long timeRange = (maxEndTime == 0 ? currentTime : maxEndTime) - minStartTime;
 
 		for (LayoutInfo row : mLayout)
 		{
@@ -112,9 +113,6 @@ public class WorkVisuals
 			if (g.hitClip(0, row.y0, pw, row.height))
 			{
 				g.translate(0, row.y0);
-
-				long timeRange = maxEndTime - minStartTime;
-				int barMaxWidth = pw - mLabelWidth - 10 - mRightMarginWidth;
 
 				boolean selected = aSelectedWork != null && aSelectedWork.equals(work.getId());
 
@@ -188,9 +186,9 @@ public class WorkVisuals
 					tb.setText(work.getLabel());
 				}
 
-				tb.setForeground(selected ? LABEL_FOREGROUND_SELECTED : LABEL_FOREGROUND);
-				tb.setHeight(row.height);
 				tb.setX(ix + 2);
+				tb.setHeight(row.height);
+				tb.setForeground(selected ? LABEL_FOREGROUND_SELECTED : LABEL_FOREGROUND);
 				tb.setFont(LABEL_FONT);
 				tb.render(g);
 
@@ -201,100 +199,47 @@ public class WorkVisuals
 
 					if (work.getStartTime() > 0)
 					{
-						long startTime = work.getStartTime() - minStartTime;
-						long endTime = Math.max(startTime, (work.getEndTime() == 0 ? maxEndTime : work.getEndTime()) - minStartTime);
+						long startTime = work.getStartTime();
+						long endTime = work.getEndTime() == 0 ? currentTime : work.getEndTime();
 
-						if (work.getChildren() != null && timeRange > 0)
+						int barMaxWidth = pw - mLabelWidth - 10 - mRightMarginWidth;
+						int x0 = mLabelWidth + (int)((startTime - minStartTime) * barMaxWidth / timeRange);
+						int x1 = mLabelWidth + (int)((endTime - minStartTime) * barMaxWidth / timeRange);
+
+						g.setColor(COLORS[work.getColor()]);
+						g.fillRect(x0, cy - 4, x1 - x0, 9);
+
+						long childTime = 0;
+						boolean onlyDetails = true;
+
+						if (work.getChildren() != null)
 						{
-							long selfTime = endTime - startTime;
-
-							Work[] children = work.getChildren().toArray(Work[]::new);
-
-							long midTime = 0;
-							for (Work child : children)
+							for (Work child : work.getChildren())
 							{
-								midTime = Math.max(midTime, Math.max(startTime, (child.getEndTime() == 0 ? maxEndTime : child.getEndTime()) - minStartTime));
+								long childStartTime = child.getStartTime();
+								long childEndTime = child.getEndTime() == 0 ? currentTime : child.getEndTime();
+
+								int childX0 = mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange);
+								int childX1 = mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange);
+
+								drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
+
+								childTime += childEndTime - childStartTime;
+								onlyDetails &= child.isDetail();
 							}
-
-							int selfX0 = mLabelWidth + (int)(startTime * barMaxWidth / timeRange);
-							int selfX1 = mLabelWidth + (int)(midTime * barMaxWidth / timeRange);
-							int selfX2 = mLabelWidth + (int)(endTime * barMaxWidth / timeRange);
-
-							if (selfX0 != selfX2)
-							{
-								g.setColor(COLORS[work.getColor()]);
-								g.fillRect(selfX0, cy - 4, selfX2 - selfX0, 9);
-							}
-							if (selfX1 > selfX2)
-							{
-								g.setColor(mGroupColor);
-								g.drawLine(selfX1, cy - 1, selfX2, cy - 1);
-								g.drawLine(selfX1, cy, selfX2, cy);
-							}
-
-							int labelOffset = Math.max(0, Math.max(selfX0, Math.max(selfX0, selfX2)));
-
-							boolean onlyDetails = true;
-							for (Work child : children)
-							{
-								if (child.getStartTime() > 0)
-								{
-									long childStartTime = child.getStartTime() - minStartTime;
-									long childEndTime = (child.getEndTime() == 0 ? maxEndTime : child.getEndTime()) - minStartTime;
-
-									int childX0 = mLabelWidth + (int)(childStartTime * barMaxWidth / timeRange);
-									int childX1 = mLabelWidth + (int)(childEndTime * barMaxWidth / timeRange);
-
-									drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
-
-									labelOffset = Math.max(labelOffset, Math.max(childX0, childX1));
-
-									if (child.getEndTime() > 0 && child.getEndTime() < endTime)
-									{
-										selfTime -= child.getEndTime() - child.getStartTime();
-									}
-
-									onlyDetails &= child.isDetail();
-								}
-							}
-
-							int boxX1 = labelOffset;
-							int boxX2 = mLabelWidth + (int)((maxEndTime - minStartTime) * barMaxWidth / timeRange);
-
-							if (boxX2 > boxX1 && work.getMaxEndTime() == maxEndTime)
-							{
-								g.setColor(mGroupColor);
-								g.drawLine(boxX1, cy - 1, boxX2, cy - 1);
-								g.drawLine(boxX1, cy, boxX2, cy);
-
-								labelOffset = boxX2;
-							}
-
-							long durTime = maxEndTime - work.getStartTime();
-							String dur = formatTime(durTime);
-							String slf = formatTime(selfTime);
-
-							tb.setX(labelOffset + 5);
-							tb.setWidth(pw - labelOffset - 5);
-							tb.setForeground(TIME_COLOR);
-							tb.setFont(TIME_FONT);
-							tb.setText(onlyDetails ? dur : selfTime <= 0 ? "Σ" + dur : selfTime >= durTime ? "Σ" + slf : "Ø" + slf + " / Σ" + dur);
-							tb.render(g);
 						}
-						else if (timeRange > 0)
-						{
-							int boxX0 = mLabelWidth + (int)(startTime * barMaxWidth / timeRange);
-							int boxX1 = mLabelWidth + (int)(endTime * barMaxWidth / timeRange);
 
-							g.setColor(COLORS[work.getColor()]);
-							g.fillRect(boxX0, cy - 4, boxX1 - boxX0 + 1, 9);
+						long totalTime = endTime - startTime;
+						long selfTime = endTime - startTime - childTime;
+						String totalText = formatTime(totalTime);
+						String selfText = formatTime(selfTime);
 
-							tb.setX(boxX1 + 5).setWidth(pw - boxX1 - 5);
-							tb.setText(formatTime(endTime - startTime));
-							tb.setForeground(TIME_COLOR);
-							tb.setFont(TIME_FONT);
-							tb.render(g);
-						}
+						tb.setX(x1 + 5);
+						tb.setWidth(pw - x1 - 5);
+						tb.setForeground(TIME_COLOR);
+						tb.setFont(TIME_FONT);
+						tb.setText(onlyDetails ? totalText : selfTime <= 0 ? "Σ" + totalText : selfTime >= totalTime ? "Σ" + selfText : "Ø" + selfText + " / Σ" + totalText);
+						tb.render(g);
 					}
 				}
 
