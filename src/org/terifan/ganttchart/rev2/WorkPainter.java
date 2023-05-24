@@ -11,7 +11,6 @@ import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationRate;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationSteps;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconDetail;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconStatus;
-import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.DIVIDER_COLOR;
 import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FONT;
 import static org.terifan.ganttchart.rev2.StyleSheet.TIME_COLOR;
@@ -22,8 +21,10 @@ import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND_SELECTED;
 import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND;
 import static org.terifan.ganttchart.rev2.StyleSheet.ROW_BACKGROUND_SELECTED;
 import static org.terifan.ganttchart.rev2.StyleSheet.ROW_OUTLINE_SELECTED;
+import static org.terifan.ganttchart.rev2.StyleSheet.STAGE_COLORS;
 import static org.terifan.ganttchart.rev2.StyleSheet.mLabelWidth;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRightMarginWidth;
+import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.mSingeLineHeight;
 
 
@@ -71,8 +72,11 @@ public class WorkPainter
 
 			for (int i = 0, last = children.length - 1; i <= last; i++)
 			{
-				aY = layoutRow(aLayout, children[i], aY, aIndent + (i == last ? "." : "+"));
-				aY = layout(aLayout, children[i], aY, aIndent + (i == last ? " " : "|"));
+				if (!children[i].isStage())
+				{
+					aY = layoutRow(aLayout, children[i], aY, aIndent + (i == last ? "." : "+"));
+					aY = layout(aLayout, children[i], aY, aIndent + (i == last ? " " : "|"));
+				}
 			}
 		}
 
@@ -139,18 +143,6 @@ public class WorkPainter
 				{
 					g.drawImage(mIconDetail, ix, iy, null);
 				}
-//				else if (work.getStartTime() == 0)
-//				{
-//					g.drawImage(mIconStatus.get(Status.PENDING), ix, iy, null);
-//				}
-//				else if (work.getStatus() == Status.NEGATIVE || work.getStatus() == Status.FAILURE || work.getStatus() == Status.SUCCESS || work.getStatus() == Status.POSITIVE)
-//				{
-//					g.drawImage(mIconStatus.get(work.getStatus()), ix, iy, null);
-//				}
-//				else if (work.getEndTime() != 0)
-//				{
-//					g.drawImage(mIconFinished, ix, iy, null);
-//				}
 				else if (work.getStatus() == Status.RUNNING)
 				{
 					AffineTransform tx = g.getTransform();
@@ -203,13 +195,14 @@ public class WorkPainter
 						int x1 = mLabelWidth + (int)((endTime - minStartTime) * barMaxWidth / timeRange);
 
 						g.setColor(COLORS[work.getColor()]);
-						g.fillRect(x0, cy - 4, x1 - x0, 9);
+						g.fillRect((int)Math.ceil(x0), cy - 4, Math.max((int)Math.ceil(x1 - x0), 1), 9);
 
 						long childTime = 0;
 						boolean onlyDetails = true;
 
 						if (work.getChildren() != null)
 						{
+							int stageIndex = 0;
 							for (Work child : work.getChildren())
 							{
 								if (child.getStatus() != Status.PENDING)
@@ -217,10 +210,18 @@ public class WorkPainter
 									long childStartTime = child.getStartTime();
 									long childEndTime = child.getEndTime() == 0 ? currentTime : child.getEndTime();
 
-									int childX0 = mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange);
-									int childX1 = mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange);
+									int childX0 = (int)Math.ceil(mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange));
+									int childX1 = (int)Math.ceil(mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange) - childX0);
 
-									drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
+									if (child.isStage())
+									{
+										g.setColor(child.getColor() != 255 ? COLORS[child.getColor()] : STAGE_COLORS[stageIndex++ % STAGE_COLORS.length]);
+										g.fillRect(childX0, cy - 4, childX1, 9);
+									}
+									else
+									{
+										drawDottedRect(g, childX0, cy - 4, childX1, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
+									}
 
 									childTime += childEndTime - childStartTime;
 									onlyDetails &= child.isDetail();

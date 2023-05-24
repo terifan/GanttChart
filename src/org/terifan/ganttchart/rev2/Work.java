@@ -23,7 +23,9 @@ public class Work implements AutoCloseable, Externalizable
 	{
 		PENDING,
 		RUNNING,
+		/** Aborted work items were never run */
 		ABORT,
+		/** Finished work items were closed without a status, assumed to be okay */
 		FINISH,
 		FAIL,
 		SUCCESS
@@ -41,6 +43,7 @@ public class Work implements AutoCloseable, Externalizable
 	private long mEndTime;
 	private boolean mDetail;
 	private byte mColor;
+	private boolean mStage;
 
 
 	public Work()
@@ -107,6 +110,9 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * note: the <i>start</i> and <i>stage</i> methods will automatically set the source location.
+	 */
 	public Work setSourceClass(String aSourceClass)
 	{
 		mSourceClass = aSourceClass;
@@ -120,6 +126,9 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * note: the <i>start</i> and <i>stage</i> methods will automatically set the source location.
+	 */
 	public Work setSourceMethod(String aSourceMethod)
 	{
 		mSourceMethod = aSourceMethod;
@@ -178,16 +187,40 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * Creates, attaches and return a Work item.
+	 */
 	public Work start()
 	{
 		return start("");
 	}
 
 
+	/**
+	 * Creates, attaches and return a Work item.
+	 */
 	public Work start(Object aLabel)
 	{
 		Work work = new Work(aLabel);
 		work.mStartTime = System.currentTimeMillis();
+		if (work.mStatus == Status.PENDING)
+		{
+			work.mStatus = Status.RUNNING;
+		}
+		add(work);
+		return work;
+	}
+
+
+	/**
+	 * Creates, attaches and return a stage Work item.
+	 */
+	public Work stage(Object aLabel)
+	{
+		Work work = new Work(aLabel);
+		work.mStartTime = System.currentTimeMillis();
+		work.mStage = true;
+		work.mColor = (byte)255;
 		if (work.mStatus == Status.PENDING)
 		{
 			work.mStatus = Status.RUNNING;
@@ -225,27 +258,45 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * sets the status to ABORT
+	 */
 	public Work abort()
 	{
 		return setStatus(Status.ABORT);
 	}
 
 
+	/**
+	 * sets the status to FINISH
+	 */
 	public Work finish()
 	{
 		return setStatus(Status.FINISH);
 	}
 
 
+	/**
+	 * sets the status to FAIL
+	 */
 	public Work fail()
 	{
 		return setStatus(Status.FAIL);
 	}
 
 
+	/**
+	 * sets the status to SUCCESS
+	 */
 	public Work success()
 	{
 		return setStatus(Status.SUCCESS);
+	}
+
+
+	public boolean isStage()
+	{
+		return mStage;
 	}
 
 
@@ -255,6 +306,9 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * Creates, attaches and return a detail work item to this Work
+	 */
 	public Work detail(Object aValue)
 	{
 		String s = aValue == null ? "" : formatException(aValue).toString();
@@ -273,6 +327,9 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * Creates, attaches and return a detail work item to this Work
+	 */
 	public Work detail(String aFormat, Object... aParams)
 	{
 		for (int i = 0; i < aParams.length; i++)
@@ -336,6 +393,9 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * Return a PendingWork item. Once started the PendingWork item will create and attach Work item to this Work item.
+	 */
 	public PendingWork pending(Object aLabel)
 	{
 		return new PendingWork(add(new Work(aLabel)));
@@ -343,7 +403,7 @@ public class Work implements AutoCloseable, Externalizable
 
 
 	/**
-	 * Create a batch of pending work items.
+	 * Create a batch of PendingWork items.
 	 *
 	 * @param aCount number of items to create
 	 * @param aLabelProvider function providing the label for PendingWork
@@ -372,12 +432,6 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
-	public String toInfoString()
-	{
-		return mLabel + ", " + mValue + ", " + mBody + ", " + mDetail + ", " + mChildren;
-	}
-
-
 	@Override
 	public String toString()
 	{
@@ -385,6 +439,9 @@ public class Work implements AutoCloseable, Externalizable
 	}
 
 
+	/**
+	 * Update the status of this Work and all it's children who are still pending or running.
+	 */
 	@Override
 	public void close()
 	{
@@ -396,10 +453,21 @@ public class Work implements AutoCloseable, Externalizable
 		{
 			throw new IllegalStateException("Work was not properly started!");
 		}
-
 		if (mStatus == Status.PENDING)
 		{
-			mStatus = Status.ABORT;
+			mStatus = lastChildStatus(Status.ABORT);
+		}
+		else if (mStatus == Status.RUNNING)
+		{
+			mStatus = lastChildStatus(Status.FINISH);
+		}
+	}
+
+
+	private Status lastChildStatus(Status aLast)
+	{
+		if (mChildren != null)
+		{
 			for (Work child : mChildren)
 			{
 				switch (child.getStatus())
@@ -409,26 +477,19 @@ public class Work implements AutoCloseable, Externalizable
 						child.close();
 						break;
 				}
-			}
-		}
-		else if (mStatus == Status.RUNNING)
-		{
-			mStatus = Status.FINISH;
-			if (mChildren != null)
-			{
-				for (Work child : mChildren)
+				switch (child.getStatus())
 				{
-					switch (child.getStatus())
-					{
-						case PENDING:
-						case RUNNING:
-							child.close();
-							break;
-					}
+					case ABORT:
+					case PENDING:
+					case RUNNING:
+						break;
+					default:
+						aLast = child.getStatus();
+						break;
 				}
-				mStatus = mChildren.get(mChildren.size() - 1).getStatus();
 			}
 		}
+		return aLast;
 	}
 
 
@@ -442,6 +503,7 @@ public class Work implements AutoCloseable, Externalizable
 		aOut.writeUTF(mSourceClass);
 		aOut.writeUTF(mSourceMethod);
 		aOut.writeBoolean(mDetail);
+		aOut.writeBoolean(mStage);
 		aOut.writeByte(mColor);
 		aOut.writeUTF(mLabel);
 		aOut.writeUTF(mBody);
@@ -468,6 +530,7 @@ public class Work implements AutoCloseable, Externalizable
 		mSourceClass = aIn.readUTF();
 		mSourceMethod = aIn.readUTF();
 		mDetail = aIn.readBoolean();
+		mStage = aIn.readBoolean();
 		mColor = aIn.readByte();
 		mLabel = aIn.readUTF();
 		mBody = aIn.readUTF();

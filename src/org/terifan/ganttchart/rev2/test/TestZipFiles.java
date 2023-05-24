@@ -9,12 +9,17 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
@@ -82,16 +87,43 @@ public class TestZipFiles
 
 //			panel.setModel(model);
 
-			String src = "d:\\Pictures";
-			String dst = "d:\\test.zip";
-			AtomicInteger limit = new AtomicInteger(100);
+			ExecutorService pool = Executors.newFixedThreadPool(2);
+			String[] srcs = {"d:\\Pictures","d:\\Documents","d:\\Music","d:\\Videos"};
+			String[] dsts = {"d:\\test1.zip","d:\\test2.zip","d:\\test3.zip","d:\\test4.zip"};
 
-			try (Work w0 = model.start("creating zip"); ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dst)))
+			for (int i = 0; i < srcs.length; i++)
 			{
-				w0.detail("Zip %s files from %s to %s", limit.get(), src, dst);
+				String src = srcs[i];
+				String dst = dsts[i];
 
-				visit(Paths.get(src), zos, w0, limit);
+				pool.submit(() -> {
+					try
+					{
+						AtomicInteger limit = new AtomicInteger(100);
+
+						try (Work w0 = model.start("creating zip"); ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dst)))
+						{
+							w0.detail("Zip %s files from %s to %s", limit.get(), src, dst);
+
+							visit(Paths.get(src), zos, w0, limit);
+						}
+					}
+					catch (Exception e)
+					{
+						e.printStackTrace(System.out);
+					}
+				});
 			}
+
+			try
+			{
+				pool.shutdown();
+				pool.awaitTermination(1, TimeUnit.DAYS);
+			}
+			catch (Exception e)
+			{
+			}
+
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos))
@@ -146,47 +178,77 @@ public class TestZipFiles
 				w0.success();
 			}
 
+			ExecutorService pool = Executors.newFixedThreadPool(5);
 			for (Entry<Path, PendingWork> entry : pending.entrySet())
 			{
-				try (Work w1 = entry.getValue().start())
-				{
-					try
+				pool.submit(()-> {
+					try (Work w1 = entry.getValue().start())
 					{
-						byte[] bytes;
-						try (Work w2 = w1.start("Reading file"))
+						try
 						{
-							bytes = Files.readAllBytes(entry.getKey());
-//							if (rnd.nextInt(2) == 0) throw new EOFException();
-						}
+							Thread.sleep(rnd.nextInt(100));
 
-						ZipEntry zipEntry;
-						try (Work w2 = w1.start("Writing to zip"))
+							byte[] bytes;
+							try (Work w2 = w1.stage("Reading file"))
+							{
+								bytes = Files.readAllBytes(entry.getKey());
+	//							if (rnd.nextInt(2) == 0) throw new EOFException();
+								Thread.sleep(rnd.nextInt(100));
+							}
+
+							Thread.sleep(rnd.nextInt(100));
+
+							try (Work w2 = w1.stage("Computing checksum"))
+							{
+								MessageDigest md = MessageDigest.getInstance("SHA512");
+								md.update(bytes);
+								w2.detail(HexFormat.of().formatHex(md.digest()));
+							}
+
+							ZipEntry zipEntry;
+							try (Work w2 = w1.stage("Writing to zip"))
+							{
+								w2.setColor(3);
+								synchronized (TestZipFiles.class)
+								{
+									try
+									{
+										zipEntry = new ZipEntry(entry.getKey().subpath(1, entry.getKey().getNameCount()).toString());
+										aZip.putNextEntry(zipEntry);
+										aZip.write(bytes);
+										aZip.closeEntry();
+									}
+									catch (Exception e)
+									{
+										w2.detail(e);
+										w2.fail();
+										return;
+									}
+								}
+								Thread.sleep(rnd.nextInt(100));
+
+								w2.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100 - zipEntry.getCompressedSize() * 100 / bytes.length) + "%");
+							}
+
+							Thread.sleep(rnd.nextInt(100));
+
+							w1.success();
+						}
+						catch (Exception e)
 						{
-							w2.setColor(3);
-							try
-							{
-								zipEntry = new ZipEntry(entry.getKey().subpath(1, entry.getKey().getNameCount()).toString());
-								aZip.putNextEntry(zipEntry);
-								aZip.write(bytes);
-								aZip.closeEntry();
-							}
-							catch (Exception e)
-							{
-								w2.detail(e);
-								w2.fail();
-								return;
-							}
+							w1.detail(e);
+							w1.fail();
 						}
-
-						w1.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100 - zipEntry.getCompressedSize() * 100 / bytes.length) + "%");
-						w1.success();
 					}
-					catch (Exception e)
-					{
-						w1.detail(e);
-						w1.fail();
-					}
-				}
+				});
+			}
+			try
+			{
+				pool.shutdown();
+				pool.awaitTermination(1, TimeUnit.DAYS);
+			}
+			catch (Exception e)
+			{
 			}
 		}
 	}
