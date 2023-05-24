@@ -78,7 +78,7 @@ public class TestZipFiles
 
 			String src = "d:\\Pictures";
 			String dst = "d:\\test.zip";
-			AtomicInteger limit = new AtomicInteger(10000);
+			AtomicInteger limit = new AtomicInteger(100);
 
 			try (Work w0 = model.start("creating zip"); ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(dst)))
 			{

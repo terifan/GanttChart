@@ -6,19 +6,18 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
-import static org.terifan.ganttchart.rev2.Work.Status.PENDING;
 
 
 public class Work implements Externalizable, AutoCloseable
 {
 	private final static long serialVersionUID = 1L;
 
-	private final static SecureRandom RND = new SecureRandom();
-
+	private final static AtomicLong COUNTER = new AtomicLong(new Random().nextLong());
 
 	public enum Status
 	{
@@ -47,7 +46,7 @@ public class Work implements Externalizable, AutoCloseable
 
 	public Work()
 	{
-		mId = RND.nextLong();
+		mId = COUNTER.getAndIncrement();
 		mLabel = "";
 		mBody = "";
 		mValue = "";
@@ -449,17 +448,17 @@ public class Work implements Externalizable, AutoCloseable
 	public synchronized void writeExternal(ObjectOutput aOut) throws IOException
 	{
 		aOut.writeLong(mId);
-		aOut.writeUTF(mLabel);
+		aOut.writeByte(mStatus.ordinal());
 		aOut.writeLong(mStartTime);
 		aOut.writeLong(mEndTime);
-		aOut.writeUTF(mBody);
-		aOut.writeUTF(mValue);
 		aOut.writeUTF(mSourceClass);
 		aOut.writeUTF(mSourceMethod);
-		aOut.writeByte(mStatus.ordinal());
 		aOut.writeBoolean(mDetail);
 		aOut.writeByte(mColor);
-		aOut.writeShort(mChildren == null ? 0 : mChildren.size());
+		aOut.writeUTF(mLabel);
+		aOut.writeUTF(mBody);
+		aOut.writeUTF(mValue);
+		aOut.writeInt(mChildren == null ? 0 : mChildren.size());
 
 		if (mChildren != null)
 		{
@@ -475,17 +474,17 @@ public class Work implements Externalizable, AutoCloseable
 	public synchronized void readExternal(ObjectInput aIn) throws IOException
 	{
 		mId = aIn.readLong();
-		mLabel = aIn.readUTF();
+		mStatus = Status.values()[aIn.readByte()];
 		mStartTime = aIn.readLong();
 		mEndTime = aIn.readLong();
-		mBody = aIn.readUTF();
-		mValue = aIn.readUTF();
 		mSourceClass = aIn.readUTF();
 		mSourceMethod = aIn.readUTF();
-		mStatus = Status.values()[aIn.readByte()];
 		mDetail = aIn.readBoolean();
 		mColor = aIn.readByte();
-		int count = aIn.readShort();
+		mLabel = aIn.readUTF();
+		mBody = aIn.readUTF();
+		mValue = aIn.readUTF();
+		int count = aIn.readInt();
 
 		if (count > 0)
 		{
