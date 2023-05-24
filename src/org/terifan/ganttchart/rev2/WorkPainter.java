@@ -10,8 +10,6 @@ import static org.terifan.ganttchart.rev2.StyleSheet.COLORS;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationRate;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationSteps;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconDetail;
-import static org.terifan.ganttchart.rev2.StyleSheet.mIconFinished;
-import static org.terifan.ganttchart.rev2.StyleSheet.mIconSpinner;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconStatus;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.DIVIDER_COLOR;
@@ -24,26 +22,22 @@ import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND_SELECTED;
 import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND;
 import static org.terifan.ganttchart.rev2.StyleSheet.ROW_BACKGROUND_SELECTED;
 import static org.terifan.ganttchart.rev2.StyleSheet.ROW_OUTLINE_SELECTED;
+import static org.terifan.ganttchart.rev2.StyleSheet.mLabelWidth;
+import static org.terifan.ganttchart.rev2.StyleSheet.mRightMarginWidth;
+import static org.terifan.ganttchart.rev2.StyleSheet.mSingeLineHeight;
 
 
-public class WorkVisuals
+public class WorkPainter
 {
 	private final static int TREE_ICON_SIZE = 16;
 
 	private Work mWork;
 	private LayoutInfo[] mLayout;
-	private int mLabelWidth;
-	private int mSingeLineHeight;
-	private int mRightMarginWidth;
 
 
-	public WorkVisuals(Work aWork)
+	public WorkPainter(Work aWork)
 	{
 		mWork = aWork;
-
-		mRightMarginWidth = 100;
-		mLabelWidth = 250;
-		mSingeLineHeight = 24;
 	}
 
 
@@ -55,10 +49,10 @@ public class WorkVisuals
 
 	public void layout()
 	{
-		ArrayList<LayoutInfo> layout = new ArrayList<>();
-		int y = layoutRow(layout, mWork, 0, "");
-		layout(layout, mWork, y, "");
-		mLayout = layout.toArray(LayoutInfo[]::new);
+		ArrayList<LayoutInfo> newLayout = new ArrayList<>();
+		int y = layoutRow(newLayout, mWork, 0, "");
+		layout(newLayout, mWork, y, "");
+		mLayout = newLayout.toArray(LayoutInfo[]::new);
 	}
 
 
@@ -145,25 +139,29 @@ public class WorkVisuals
 				{
 					g.drawImage(mIconDetail, ix, iy, null);
 				}
-				else if (work.getStartTime() == 0)
-				{
-					g.drawImage(mIconStatus[Status.PENDING.ordinal()], ix, iy, null);
-				}
-				else if (work.getStatus() == Status.ABORTED || work.getStatus() == Status.FAILED || work.getStatus() == Status.SUCCESS || work.getStatus() == Status.FINISH)
-				{
-					g.drawImage(mIconStatus[work.getStatus().ordinal()], ix, iy, null);
-				}
-				else if (work.getEndTime() != 0)
-				{
-					g.drawImage(mIconFinished, ix, iy, null);
-				}
-				else
+//				else if (work.getStartTime() == 0)
+//				{
+//					g.drawImage(mIconStatus.get(Status.PENDING), ix, iy, null);
+//				}
+//				else if (work.getStatus() == Status.NEGATIVE || work.getStatus() == Status.FAILURE || work.getStatus() == Status.SUCCESS || work.getStatus() == Status.POSITIVE)
+//				{
+//					g.drawImage(mIconStatus.get(work.getStatus()), ix, iy, null);
+//				}
+//				else if (work.getEndTime() != 0)
+//				{
+//					g.drawImage(mIconFinished, ix, iy, null);
+//				}
+				else if (work.getStatus() == Status.RUNNING)
 				{
 					AffineTransform tx = g.getTransform();
 					g.translate(ix, iy);
 					g.rotate(Math.toRadians((mAnimationSteps * (currentTime / mAnimationRate / mAnimationSteps)) % 360), TREE_ICON_SIZE / 2, TREE_ICON_SIZE / 2);
-					g.drawImage(mIconSpinner, 0, 0, null);
+					g.drawImage(mIconStatus.get(work.getStatus()), 0, 0, null);
 					g.setTransform(tx);
+				}
+				else
+				{
+					g.drawImage(mIconStatus.get(work.getStatus()), ix, iy, null);
 				}
 
 				ix += TREE_ICON_SIZE;

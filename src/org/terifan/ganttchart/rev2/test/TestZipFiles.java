@@ -1,8 +1,10 @@
 package org.terifan.ganttchart.rev2.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,36 +47,40 @@ public class TestZipFiles
 
 			WorkStatusModel model = new WorkStatusModel();
 
-			Timer timer = new Timer();
-			timer.schedule(new TimerTask()
+			new Timer().schedule(new TimerTask()
 			{
 				@Override
 				public void run()
 				{
 					try
 					{
-//						ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//						try (ObjectOutputStream oos = new ObjectOutputStream(baos))
-//						{
-//							oos.writeObject(model);
-//						}
-//
-//						try (ObjectInputStream oos = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())))
-//						{
-//							panel.setModel((WorkStatusModel)oos.readObject());
-//						}
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						try (ObjectOutputStream oos = new ObjectOutputStream(baos))
+						{
+							oos.writeObject(model);
+						}
+
+						try (ObjectInputStream oos = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())))
+						{
+							panel.setModel((WorkStatusModel)oos.readObject());
+						}
 
 						panel.revalidate();
 						panel.repaint();
+
+						if (!panel.getModel().hasWork())
+						{
+							cancel();
+						}
 					}
 					catch (Exception e)
 					{
 						e.printStackTrace(System.out);
 					}
 				}
-			}, 250, 250);
+			}, 0, 250);
 
-			panel.setModel(model);
+//			panel.setModel(model);
 
 			String src = "d:\\Pictures";
 			String dst = "d:\\test.zip";
@@ -86,10 +92,6 @@ public class TestZipFiles
 
 				visit(Paths.get(src), zos, w0, limit);
 			}
-
-			panel.revalidate();
-			panel.repaint();
-			timer.cancel();
 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			try (ObjectOutputStream oos = new ObjectOutputStream(baos))
@@ -118,9 +120,9 @@ public class TestZipFiles
 
 	private static void visit(Path aPath, ZipOutputStream aZip, Work aWork, AtomicInteger aCounter) throws IOException
 	{
-		try (Work w = aWork.start("Processing folder"))
+		try (Work w0 = aWork.start("Processing folder"))
 		{
-			w.detail("Path " + aPath);
+			w0.detail("Path " + aPath);
 
 			List<Path> files = Files.list(aPath).sorted((e, f) -> e.equals(f) ? 0 : Files.isDirectory(e) && Files.isDirectory(f) ? e.compareTo(f) : Files.isDirectory(e) ? -1 : e.compareTo(f)).toList();
 
@@ -129,38 +131,38 @@ public class TestZipFiles
 			{
 				if (Files.isDirectory(path))
 				{
-					visit(path, aZip, w, aCounter);
+					visit(path, aZip, w0, aCounter);
 				}
 				else if (aCounter.get() > 0) // && pending.size() < 10)
 				{
 					aCounter.decrementAndGet();
 
-					pending.put(path, w.pending("Adding file " + path.getFileName().toString()));
+					pending.put(path, w0.pending("Adding file " + path.getFileName().toString()));
 				}
+			}
+
+			if (pending.isEmpty())
+			{
+				w0.success();
 			}
 
 			for (Entry<Path, PendingWork> entry : pending.entrySet())
 			{
-//				Thread.sleep(rnd.nextInt(50));
-
-				try (Work w0 = entry.getValue().start())
+				try (Work w1 = entry.getValue().start())
 				{
-//					Thread.sleep(rnd.nextInt(50));
-
 					try
 					{
 						byte[] bytes;
-						try (Work w1 = w0.start("Reading file"))
+						try (Work w2 = w1.start("Reading file"))
 						{
 							bytes = Files.readAllBytes(entry.getKey());
 //							if (rnd.nextInt(2) == 0) throw new EOFException();
-//							Thread.sleep(rnd.nextInt(1000));
 						}
 
 						ZipEntry zipEntry;
-						try (Work w1 = w0.start("Writing to zip"))
+						try (Work w2 = w1.start("Writing to zip"))
 						{
-							w1.setColor(3);
+							w2.setColor(3);
 							try
 							{
 								zipEntry = new ZipEntry(entry.getKey().subpath(1, entry.getKey().getNameCount()).toString());
@@ -170,26 +172,20 @@ public class TestZipFiles
 							}
 							catch (Exception e)
 							{
-								w1.detail(e);
-								w1.fail();
+								w2.detail(e);
+								w2.fail();
 								return;
 							}
-//							Thread.sleep(rnd.nextInt(1000));
 						}
 
-						w0.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100 - zipEntry.getCompressedSize() * 100 / bytes.length) + "%");
-						w0.success();
+						w1.detail("Finished writing " + bytes.length + " bytes, compressed " + zipEntry.getCompressedSize() + " bytes, ratio " + (100 - zipEntry.getCompressedSize() * 100 / bytes.length) + "%");
+						w1.success();
 					}
 					catch (Exception e)
 					{
-						w0.detail(e);
-						w0.fail();
+						w1.detail(e);
+						w1.fail();
 					}
-				}
-				catch (Exception e)
-				{
-					e.printStackTrace(System.out);
-					w.abort();
 				}
 			}
 		}

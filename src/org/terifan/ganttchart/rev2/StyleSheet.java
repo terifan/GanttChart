@@ -3,7 +3,9 @@ package org.terifan.ganttchart.rev2;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import javax.imageio.ImageIO;
+import org.terifan.ganttchart.rev2.Work.Status;
 
 
 public class StyleSheet
@@ -86,13 +88,14 @@ public class StyleSheet
 	};
 
 	static BufferedImage mIconSheet;
-	static BufferedImage mIconSpinner;
-	static BufferedImage mIconFinished;
 	static BufferedImage mIconDetail;
-	static BufferedImage[] mIconStatus;
+	static HashMap<Status, BufferedImage> mIconStatus;
 	static int mAnimationRate;
 	static int mAnimationSteps;
 
+	static int mRightMarginWidth = 100;
+	static int mLabelWidth = 250;
+	static int mSingeLineHeight = 24;
 
 	static
 	{
@@ -102,21 +105,15 @@ public class StyleSheet
 			{
 				mIconSheet = ImageIO.read(WorkStatusPanel.class.getResource("icons.png"));
 
-				mIconStatus = new BufferedImage[]
-				{
-					mIconSheet.getSubimage(24 * 0, 24 * 3, 16, 16), // running
-					mIconSheet.getSubimage(24 * 3, 24 * 1, 16, 16), // failed
-					mIconSheet.getSubimage(24 * 6, 24 * 1, 16, 16), // aborted
-					mIconSheet.getSubimage(24 * 8, 24 * 2, 16, 16), // pending
-					mIconSheet.getSubimage(24 * 1, 24 * 0, 16, 16), // finish
-					mIconSheet.getSubimage(24 * 2, 24 * 0, 16, 16), // success
-					mIconSheet.getSubimage(24 * 5, 24 * 2, 16, 16)  // unknown
-				};
-
-				mIconFinished = mIconSheet.getSubimage(24 * 1, 24 * 0, 16, 16);
 				mIconDetail = mIconSheet.getSubimage(24 * 3, 24 * 3, 16, 16);
 
-				mIconSpinner = mIconSheet.getSubimage(24 * 5, 24 * 5, 16, 16);
+				mIconStatus = new HashMap<>();
+				mIconStatus.put(Status.PENDING, mIconSheet.getSubimage(24 * 7, 24 * 2, 16, 16));
+				mIconStatus.put(Status.RUNNING, mIconSheet.getSubimage(24 * 5, 24 * 5, 16, 16));
+				mIconStatus.put(Status.FINISH, mIconSheet.getSubimage(24 * 1, 24 * 0, 16, 16));
+				mIconStatus.put(Status.ABORT, mIconSheet.getSubimage(24 * 6, 24 * 1, 16, 16));
+				mIconStatus.put(Status.FAIL, mIconSheet.getSubimage(24 * 3, 24 * 1, 16, 16));
+				mIconStatus.put(Status.SUCCESS, mIconSheet.getSubimage(24 * 2, 24 * 0, 16, 16));
 
 				mAnimationSteps = 1;
 				mAnimationRate = 4;

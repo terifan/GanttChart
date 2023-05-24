@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import org.terifan.ganttchart.rev2.Work.Status;
 
 
 public class WorkStatusModel implements Externalizable
@@ -28,19 +29,7 @@ public class WorkStatusModel implements Externalizable
 		String classPath = stack.getClassName();
 		String className = classPath.substring(classPath.lastIndexOf('.') + 1);
 
-		if (mRoot.getStartTime() == 0)
-		{
-			mRoot.startSelf();
-		}
-
-		Work work = mRoot.start(stack.getMethodName() + ":" + className);
-
-		if (mPanel != null)
-		{
-			mPanel.startRepaintTimer();
-		}
-
-		return work;
+		return start(stack.getMethodName() + ":" + className);
 	}
 
 
@@ -53,9 +42,10 @@ public class WorkStatusModel implements Externalizable
 
 		Work work = mRoot.start(aLabel);
 
-		if (mPanel != null)
+		WorkStatusPanel panel = mPanel;
+		if (panel != null)
 		{
-			mPanel.startRepaintTimer();
+			panel.startRepaintTimer();
 		}
 
 		return work;
@@ -100,15 +90,38 @@ public class WorkStatusModel implements Externalizable
 	}
 
 
-	void setPanel(WorkStatusPanel aPanel)
+	synchronized void setPanel(WorkStatusPanel aPanel)
 	{
 		mPanel = aPanel;
 	}
 
 
-	ArrayList<Work> getWork()
+	synchronized ArrayList<Work> getWork()
 	{
 		return mRoot.getChildren();
+	}
+
+
+	public boolean hasWork()
+	{
+		return hasWork(mRoot);
+	}
+
+
+	private boolean hasWork(Work aWork)
+	{
+		if (aWork.getChildren() != null)
+		{
+			for (Work child : aWork.getChildren())
+			{
+//				if (child.getEndTime() == 0 || hasWork(child))
+				if (child.getStatus() == Status.PENDING || child.getStatus() == Status.RUNNING || hasWork(child))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 

@@ -16,11 +16,14 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.swing.ActionMap;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import static org.terifan.ganttchart.rev2.StyleSheet.BACKGROUND;
 import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FOREGROUND;
+import static org.terifan.ganttchart.rev2.StyleSheet.mSingeLineHeight;
 
 
 public class WorkStatusPanel extends JPanel
@@ -29,7 +32,7 @@ public class WorkStatusPanel extends JPanel
 
 	private WorkStatusModel mModel;
 	private WorkStatusPanelRepaintTimer mRepaintTimer;
-	private HashMap<Long, WorkVisuals> mLayouts;
+	private HashMap<Long, WorkPainter> mLayouts;
 	private Long mSelectedWork;
 
 
@@ -91,7 +94,7 @@ public class WorkStatusPanel extends JPanel
 			requestFocusInWindow();
 			int my = aEvent.getY();
 			int vy = 0;
-			for (WorkVisuals info : mLayouts.values())
+			for (WorkPainter info : mLayouts.values())
 			{
 				if (my >= vy && my < vy - info.getLayoutHeight())
 				{
@@ -166,8 +169,17 @@ public class WorkStatusPanel extends JPanel
 	}
 
 
-	public WorkStatusPanel setModel(WorkStatusModel aModel)
+	public void setModel(WorkStatusModel aModel)
 	{
+		if (mModel == aModel)
+		{
+			if (mRepaintTimer != null)
+			{
+				mRepaintTimer.startRepaintTimer();
+			}
+			return;
+		}
+
 		if (mModel != null)
 		{
 			mModel.setPanel(null);
@@ -179,8 +191,6 @@ public class WorkStatusPanel extends JPanel
 		{
 			mRepaintTimer.startRepaintTimer();
 		}
-
-		return this;
 	}
 
 
@@ -196,14 +206,14 @@ public class WorkStatusPanel extends JPanel
 	{
 		JScrollPane scrollPane = (JScrollPane)SwingUtilities.getAncestorOfClass(JScrollPane.class, this);
 
-//		if (scrollPane != null)
-//		{
-//			JScrollBar vsb = scrollPane.getVerticalScrollBar();
-//			vsb.setUnitIncrement(mRowMinimumHeight);
-//			vsb.setBlockIncrement(10 * mRowMinimumHeight);
-//
-//			scrollPane.setActionMap(new ActionMap());
-//		}
+		if (scrollPane != null)
+		{
+			JScrollBar vsb = scrollPane.getVerticalScrollBar();
+			vsb.setUnitIncrement(mSingeLineHeight);
+			vsb.setBlockIncrement(10 * mSingeLineHeight);
+
+			scrollPane.setActionMap(new ActionMap());
+		}
 	}
 
 
@@ -221,16 +231,22 @@ public class WorkStatusPanel extends JPanel
 		g.setColor(LABEL_FOREGROUND);
 
 		ArrayList<Work> children = mModel.getWork();
-		for (int i = 0; i < children.size(); i++)
+
+		if (children != null)
 		{
-			Work work = children.get(i);
+			for (int i = 0; i < children.size(); i++)
+			{
+				Work work = children.get(i);
 
-			WorkVisuals visuals = mLayouts.computeIfAbsent(work.getId(), id -> new WorkVisuals(work));
+				WorkPainter painter = new WorkPainter(work);
 
-			visuals.layout();
-			visuals.paint(g, w, mSelectedWork);
+				mLayouts.put(work.getId(), painter);
 
-			g.translate(0, visuals.getLayoutHeight());
+				painter.layout();
+				painter.paint(g, w, mSelectedWork);
+
+				g.translate(0, painter.getLayoutHeight());
+			}
 		}
 	}
 
@@ -240,9 +256,9 @@ public class WorkStatusPanel extends JPanel
 	{
 		int height = 0;
 
-		for (WorkVisuals visuals : mLayouts.values())
+		for (WorkPainter painter : mLayouts.values())
 		{
-			height += visuals.getLayoutHeight();
+			height += painter.getLayoutHeight();
 		}
 
 		return new Dimension(0, height);

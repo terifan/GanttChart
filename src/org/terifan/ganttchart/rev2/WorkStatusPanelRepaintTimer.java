@@ -1,6 +1,7 @@
 package org.terifan.ganttchart.rev2;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,12 +11,12 @@ public class WorkStatusPanelRepaintTimer
 {
 	private Timer mTimer;
 	private AtomicBoolean mTimerTaskStarted;
-	private ArrayList<WorkStatusPanel> mPanels;
+	private HashSet<WorkStatusPanel> mPanels;
 
 
 	public WorkStatusPanelRepaintTimer()
 	{
-		mPanels = new ArrayList<>();
+		mPanels = new HashSet<>();
 		mTimer = new Timer(true);
 		mTimerTaskStarted = new AtomicBoolean();
 	}
@@ -36,19 +37,19 @@ public class WorkStatusPanelRepaintTimer
 
 	void startRepaintTimer()
 	{
-//		if (!mTimerTaskStarted.getAndSet(true))
-//		{
-//			mTimer.schedule(new RepaintTask(), 100, 100);
-//		}
-//
-//		for (WorkStatusPanel panel : mPanels)
-//		{
-//			if (panel != null)
-//			{
-//				panel.invalidate();
-//				panel.revalidate();
-//			}
-//		}
+		if (!mTimerTaskStarted.getAndSet(true))
+		{
+			mTimer.schedule(new RepaintTask(), 100, 100);
+		}
+
+		for (WorkStatusPanel panel : mPanels)
+		{
+			if (panel != null)
+			{
+				panel.invalidate();
+				panel.revalidate();
+			}
+		}
 	}
 
 
@@ -63,7 +64,7 @@ public class WorkStatusPanelRepaintTimer
 			{
 				panel.repaint();
 
-//				hasWork |= panel.hasWork();
+				hasWork |= panel.getModel().hasWork();
 			}
 
 			if (!hasWork)

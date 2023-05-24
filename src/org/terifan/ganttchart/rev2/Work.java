@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 
-public class Work implements Externalizable, AutoCloseable
+public class Work implements AutoCloseable, Externalizable
 {
 	private final static long serialVersionUID = 1L;
 
@@ -21,13 +21,12 @@ public class Work implements Externalizable, AutoCloseable
 
 	public enum Status
 	{
-		RUNNING,
-		FAILED,
-		ABORTED,
 		PENDING,
+		RUNNING,
+		ABORT,
 		FINISH,
-		SUCCESS,
-		UNKNOWN
+		FAIL,
+		SUCCESS
 	}
 
 	private long mId;
@@ -228,7 +227,7 @@ public class Work implements Externalizable, AutoCloseable
 
 	public Work abort()
 	{
-		return setStatus(Status.ABORTED);
+		return setStatus(Status.ABORT);
 	}
 
 
@@ -240,7 +239,7 @@ public class Work implements Externalizable, AutoCloseable
 
 	public Work fail()
 	{
-		return setStatus(Status.FAILED);
+		return setStatus(Status.FAIL);
 	}
 
 
@@ -296,7 +295,7 @@ public class Work implements Externalizable, AutoCloseable
 	 */
 	public Work setStatus(boolean aStatus)
 	{
-		return setStatus(aStatus ? Status.SUCCESS : Status.FAILED);
+		return setStatus(aStatus ? Status.SUCCESS : Status.FAIL);
 	}
 
 
@@ -382,64 +381,53 @@ public class Work implements Externalizable, AutoCloseable
 	@Override
 	public String toString()
 	{
-		return "Work{" + "mId=" + mId + ", mChildren=" + mChildren + ", mLabel=" + mLabel + ", mValue=" + mValue + ", mBody=" + mBody + ", mStatus=" + mStatus + ", mStartTime=" + mStartTime + ", mEndTime=" + mEndTime + ", mDetail=" + mDetail + ", mColor=" + mColor + '}';
+		return "Work{" + "mId=" + mId + ", mChildren=" + (mChildren == null ? 0 : mChildren.size()) + ", mLabel=" + mLabel + ", mValue=" + mValue + ", mBody=" + mBody + ", mStatus=" + mStatus + ", mStartTime=" + mStartTime + ", mEndTime=" + mEndTime + ", mDetail=" + mDetail + ", mColor=" + mColor + '}';
 	}
 
 
 	@Override
 	public void close()
 	{
-		if (mStartTime == 0)
-		{
-			throw new IllegalStateException("Work was not properly started!");
-		}
 		if (mEndTime == 0)
 		{
 			mEndTime = System.currentTimeMillis();
 		}
+		if (mStartTime == 0)
+		{
+			throw new IllegalStateException("Work was not properly started!");
+		}
+
 		if (mStatus == Status.PENDING)
 		{
-			mStatus = Status.ABORTED;
-		}
-		if (mStatus == Status.RUNNING)
-		{
-			Status s = Status.UNKNOWN;
-			boolean hasSuccess = false;
-			boolean hasFail = false;
-			if (mChildren != null)
+			mStatus = Status.ABORT;
+			for (Work child : mChildren)
 			{
-				for (Work c : mChildren)
+				switch (child.getStatus())
 				{
-					if (s == Status.UNKNOWN)
-					{
-						if (c.mStatus == Status.ABORTED)
-						{
-							s = Status.ABORTED;
-						}
-						if (c.mStatus == Status.FAILED)
-						{
-							hasFail = true;
-						}
-						if (c.mStatus == Status.SUCCESS)
-						{
-							hasSuccess = true;
-						}
-					}
-					else if (c.mStatus == Status.PENDING)
-					{
-						c.mStatus = Status.ABORTED;
-					}
-				}
-				if (hasSuccess)
-				{
-					s = Status.SUCCESS;
-				}
-				else if (hasFail)
-				{
-					s = Status.FAILED;
+					case PENDING:
+					case RUNNING:
+						child.close();
+						break;
 				}
 			}
-			mStatus = s;
+		}
+		else if (mStatus == Status.RUNNING)
+		{
+			mStatus = Status.FINISH;
+			if (mChildren != null)
+			{
+				for (Work child : mChildren)
+				{
+					switch (child.getStatus())
+					{
+						case PENDING:
+						case RUNNING:
+							child.close();
+							break;
+					}
+				}
+				mStatus = mChildren.get(mChildren.size() - 1).getStatus();
+			}
 		}
 	}
 
@@ -462,9 +450,9 @@ public class Work implements Externalizable, AutoCloseable
 
 		if (mChildren != null)
 		{
-			for (Work w : mChildren)
+			for (Work child : mChildren)
 			{
-				w.writeExternal(aOut);
+				child.writeExternal(aOut);
 			}
 		}
 	}
@@ -491,9 +479,9 @@ public class Work implements Externalizable, AutoCloseable
 			mChildren = new ArrayList<>();
 			for (int i = 0; i < count; i++)
 			{
-				Work w = new Work();
-				w.readExternal(aIn);
-				mChildren.add(w);
+				Work child = new Work();
+				child.readExternal(aIn);
+				mChildren.add(child);
 			}
 		}
 	}
