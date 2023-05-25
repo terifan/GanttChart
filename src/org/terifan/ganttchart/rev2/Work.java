@@ -451,7 +451,8 @@ public class Work implements AutoCloseable, Externalizable
 		}
 		if (mStartTime == 0)
 		{
-			throw new IllegalStateException("Work was not properly started!");
+			mStartTime = mEndTime;
+			mStatus = lastChildStatus(Status.ABORT);
 		}
 		if (mStatus == Status.PENDING)
 		{

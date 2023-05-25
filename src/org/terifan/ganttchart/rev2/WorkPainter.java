@@ -188,7 +188,7 @@ public class WorkPainter
 					if (work.getStartTime() > 0)
 					{
 						long startTime = work.getStartTime();
-						long endTime = work.getEndTime() == 0 ? currentTime : work.getEndTime();
+						long endTime = Math.min(currentTime, work.getEndTime() == 0 ? currentTime : work.getEndTime());
 
 						int barMaxWidth = pw - mLabelWidth - 10 - mRightMarginWidth;
 						int x0 = mLabelWidth + (int)((startTime - minStartTime) * barMaxWidth / timeRange);
@@ -208,19 +208,19 @@ public class WorkPainter
 								if (child.getStatus() != Status.PENDING)
 								{
 									long childStartTime = child.getStartTime();
-									long childEndTime = child.getEndTime() == 0 ? currentTime : child.getEndTime();
+									long childEndTime = Math.min(child.getEndTime() == 0 ? currentTime : child.getEndTime(), endTime);
 
-									int childX0 = (int)Math.ceil(mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange));
-									int childX1 = (int)Math.ceil(mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange) - childX0);
+									int childX0 = mLabelWidth + (int)((childStartTime - minStartTime) * barMaxWidth / timeRange);
+									int childX1 = mLabelWidth + (int)((childEndTime - minStartTime) * barMaxWidth / timeRange);
 
 									if (child.isStage())
 									{
 										g.setColor(child.getColor() != 255 ? COLORS[child.getColor()] : STAGE_COLORS[stageIndex++ % STAGE_COLORS.length]);
-										g.fillRect(childX0, cy - 4, childX1, 9);
+										g.fillRect(childX0, cy - 4, childX1 - childX0, 9);
 									}
 									else
 									{
-										drawDottedRect(g, childX0, cy - 4, childX1, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
+										drawDottedRect(g, childX0, cy - 4, childX1 - childX0, 9, selected ? ROW_BACKGROUND_SELECTED : mRowBackgroundColors[row.index & 1], selected ? ROW_OUTLINE_SELECTED : mRowOutlineColors[row.index & 1]);
 									}
 
 									childTime += childEndTime - childStartTime;

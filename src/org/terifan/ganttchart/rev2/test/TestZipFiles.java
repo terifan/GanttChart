@@ -154,7 +154,7 @@ public class TestZipFiles
 	{
 		try (Work w0 = aWork.start("Processing folder"))
 		{
-			w0.detail("Path " + aPath);
+			w0.stage("Path " + aPath);
 
 			List<Path> files = Files.list(aPath).sorted((e, f) -> e.equals(f) ? 0 : Files.isDirectory(e) && Files.isDirectory(f) ? e.compareTo(f) : Files.isDirectory(e) ? -1 : e.compareTo(f)).toList();
 
