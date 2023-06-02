@@ -161,15 +161,18 @@ public class TestZipFiles
 			TreeMap<Path, PendingWork> pending = new TreeMap<>();
 			for (Path path : files)
 			{
-				if (Files.isDirectory(path))
+				if (aCounter.get() > 0)
 				{
-					visit(path, aZip, w0, aCounter);
-				}
-				else if (aCounter.get() > 0) // && pending.size() < 10)
-				{
-					aCounter.decrementAndGet();
+					if (Files.isDirectory(path))
+					{
+						visit(path, aZip, w0, aCounter);
+					}
+					else // if pending.size() < 10)
+					{
+						aCounter.decrementAndGet();
 
-					pending.put(path, w0.pending("Adding file " + path.getFileName().toString()));
+						pending.put(path, w0.pending("Adding file " + path.getFileName().toString()));
+					}
 				}
 			}
 
