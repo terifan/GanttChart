@@ -10,7 +10,6 @@ import static org.terifan.ganttchart.rev2.StyleSheet.COLORS;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationRate;
 import static org.terifan.ganttchart.rev2.StyleSheet.mAnimationSteps;
 import static org.terifan.ganttchart.rev2.StyleSheet.mIconDetail;
-import static org.terifan.ganttchart.rev2.StyleSheet.mIconStatus;
 import static org.terifan.ganttchart.rev2.StyleSheet.DIVIDER_COLOR;
 import static org.terifan.ganttchart.rev2.StyleSheet.LABEL_FONT;
 import static org.terifan.ganttchart.rev2.StyleSheet.TIME_COLOR;
@@ -26,6 +25,7 @@ import static org.terifan.ganttchart.rev2.StyleSheet.mLabelWidth;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRightMarginWidth;
 import static org.terifan.ganttchart.rev2.StyleSheet.mRowOutlineColors;
 import static org.terifan.ganttchart.rev2.StyleSheet.mSingeLineHeight;
+import static org.terifan.ganttchart.rev2.StyleSheet.mIconWorkStatus;
 
 
 public class WorkPainter
@@ -148,12 +148,12 @@ public class WorkPainter
 					AffineTransform tx = g.getTransform();
 					g.translate(ix, iy);
 					g.rotate(Math.toRadians((mAnimationSteps * (currentTime / mAnimationRate / mAnimationSteps)) % 360), TREE_ICON_SIZE / 2, TREE_ICON_SIZE / 2);
-					g.drawImage(mIconStatus.get(work.getStatus()), 0, 0, null);
+					g.drawImage(mIconWorkStatus.get(work.getStatus()), 0, 0, null);
 					g.setTransform(tx);
 				}
 				else
 				{
-					g.drawImage(mIconStatus.get(work.getStatus()), ix, iy, null);
+					g.drawImage(mIconWorkStatus.get(work.getStatus()), ix, iy, null);
 				}
 
 				ix += TREE_ICON_SIZE;

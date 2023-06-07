@@ -100,7 +100,9 @@ public class StyleSheet
 
 	static BufferedImage mIconSheet;
 	static BufferedImage mIconDetail;
-	static HashMap<Status, BufferedImage> mIconStatus;
+	static BufferedImage mIconInfo;
+	static HashMap<Status, BufferedImage> mIconWorkStatus;
+	static HashMap<StatusPanelRow.Status, BufferedImage> mIconRowStatus;
 	static int mAnimationRate = 4;
 	static int mAnimationSteps = 1;
 	static int mRightMarginWidth = 100;
@@ -115,20 +117,36 @@ public class StyleSheet
 			{
 				mIconSheet = ImageIO.read(WorkStatusPanel.class.getResource("icons.png"));
 
-				mIconDetail = mIconSheet.getSubimage(24 * 3, 24 * 3, 16, 16);
+				mIconDetail = getIcon(3, 3);
 
-				mIconStatus = new HashMap<>();
-				mIconStatus.put(Status.PENDING, mIconSheet.getSubimage(24 * 10, 24 * 2, 16, 16));
-				mIconStatus.put(Status.RUNNING, mIconSheet.getSubimage(24 * 5, 24 * 5, 16, 16));
-				mIconStatus.put(Status.FINISH, mIconSheet.getSubimage(24 * 1, 24 * 0, 16, 16));
-				mIconStatus.put(Status.ABORT, mIconSheet.getSubimage(24 * 6, 24 * 1, 16, 16));
-				mIconStatus.put(Status.FAIL, mIconSheet.getSubimage(24 * 3, 24 * 1, 16, 16));
-				mIconStatus.put(Status.SUCCESS, mIconSheet.getSubimage(24 * 2, 24 * 0, 16, 16));
+				mIconWorkStatus = new HashMap<>();
+				mIconRowStatus = new HashMap<>();
+
+				mIconWorkStatus.put(Status.PENDING, getIcon(10, 2));
+				mIconWorkStatus.put(Status.RUNNING, getIcon(5, 5));
+				mIconWorkStatus.put(Status.FINISH, getIcon(1, 0));
+				mIconWorkStatus.put(Status.ABORT, getIcon(6, 1));
+				mIconWorkStatus.put(Status.FAIL, getIcon(3, 1));
+				mIconWorkStatus.put(Status.SUCCESS, getIcon(2, 0));
+
+				mIconRowStatus.put(StatusPanelRow.Status.ABORT, getIcon(6, 1));
+				mIconRowStatus.put(StatusPanelRow.Status.ERROR, getIcon(4, 1));
+				mIconRowStatus.put(StatusPanelRow.Status.FAIL, getIcon(3, 1));
+				mIconRowStatus.put(StatusPanelRow.Status.INFO, getIcon(6, 2));
+				mIconRowStatus.put(StatusPanelRow.Status.SUCCESS, getIcon(2, 0));
+				mIconRowStatus.put(StatusPanelRow.Status.WARN, getIcon(1, 2));
+				mIconRowStatus.put(StatusPanelRow.Status.PENDING, getIcon(10, 2));
+				mIconRowStatus.put(StatusPanelRow.Status.RUNNING, getIcon(5, 5));
 			}
 			catch (Exception e)
 			{
 				e.printStackTrace(System.out);
 			}
 		}
+	}
+
+	public static BufferedImage getIcon(int x, int y)
+	{
+		return mIconSheet.getSubimage(24 * x, 24 * y, 16, 16);
 	}
 }
